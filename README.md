@@ -44,7 +44,7 @@ Multimonitor: Gestión inteligente de pantallas vía wlr-randr.
 
 🏗 Arquitectura del Proyecto
 
-sway-ecosystem/
+eaSway/
 ├── src/
 │   ├── cli/             # Lógica de instalación por terminal
 │   └── gui/             # Aplicación GTK4/Libadwaita
@@ -58,21 +58,21 @@ sway-ecosystem/
 Actualmente el proyecto se encuentra en fase Alpha. Puedes probar el instalador ejecutando:
 
 # Clonar el repositorio
-git clone [https://github.com/tu-usuario/sway-ecosystem.git](https://github.com/tu-usuario/sway-ecosystem.git)
+git clone [https://github.com/dozelix/eaSway.git](https://github.com/dozelix/eaSway.git)
 
 # Entrar al directorio
 cd sway-ecosystem
 
 # Ejecutar el instalador CLI
-chmod +x sway-cli
-./sway-cli install
+chmod +x main.sh
+./main.sh
 
 
 🗺 Roadmap
 
 [ ] Soporte oficial para distribuciones basadas en Arch Linux.
 
-[ ] Implementación de sway-gui (Beta).
+[ ] Implementación de sway-gui (alpha).
 
 [ ] Panel de control centralizado para configuraciones rápidas (Hot-swapping).
 
