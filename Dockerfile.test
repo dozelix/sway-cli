@@ -1,10 +1,13 @@
-# Usamos Ubuntu como base por ser común en PCs de escritorio
+# =================================================================
+# eaSway - Dockerfile de Testeo
+# Emula una instalación limpia de Debian para probar el instalador.
+# Versión: 2.0 - 06-05-2026
+# Corrección: usuario 'dozelix' (consistente con post_install.sh)
+# =================================================================
 FROM ubuntu:22.04
 
-# Evitar diálogos interactivos durante la instalación
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Instalar sudo, dependencias básicas y utilidades de sistema
 RUN apt-get update && apt-get install -y \
     sudo \
     bash \
@@ -12,12 +15,11 @@ RUN apt-get update && apt-get install -y \
     util-linux \
     && rm -rf /var/lib/apt/lists/*
 
-# Crear el usuario 'tester' y darle permisos de sudo
-RUN useradd -m -s /bin/bash tester && \
-    echo "tester ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+# BUGFIX: El usuario se llama 'dozelix', igual que en post_install.sh
+# Antes era 'tester', lo que causaba que usermod fallara silenciosamente.
+RUN useradd -m -s /bin/bash dozelix && \
+    echo "dozelix ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
-# Establecer el directorio de trabajo
-WORKDIR /home/tester/eaSway
+WORKDIR /home/dozelix/eaSway
 
-# Cambiar al usuario tester
-USER tester
+USER dozelix
