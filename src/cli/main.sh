@@ -9,7 +9,7 @@
 # Obtenemos la ruta absoluta de este script
 SCRIPT_PATH=$(readlink -f "$0")
 # Subimos 2 niveles para llegar a la raíz del proyecto (desde src/cli/)
-REPO_ROOT=$(dirname $(dirname $(dirname "$SCRIPT_PATH")))
+REPO_ROOT=$(dirname $(dirname "$SCRIPT_PATH"))
 
 # Importar variables de color y estilo (opcional, para el diseño post-punk)
 GREEN='\033[0;32m'
@@ -49,5 +49,6 @@ run_module() {
 run_module "$REPO_ROOT/scripts/check_hardware.sh" "Detección de Hardware"
 run_module "$REPO_ROOT/scripts/install_packages.sh" "Instalación de Binarios"
 run_module "$REPO_ROOT/scripts/setup_configs.sh" "Despliegue de Dotfiles"
+run_module "$REPO_ROOT/scripts/post_install.sh" "Ajustes Finales de Sistema"
 
 echo -e "\n${GREEN}Proceso finalizado. Reinicia para entrar en eaSway.${NC}"
