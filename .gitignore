@@ -11,3 +11,15 @@ Thumbs.db
 # Entornos virtuales
 venv/
 .venv/
+
+# Archivos de configuración
+*.env 
+*.ini
+*.cfg
+
+# Archivos de base de datos
+*.db
+*.sqlite
+# Archivos de migración
+migrations/
+
