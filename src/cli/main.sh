@@ -1,54 +1,54 @@
 #!/bin/bash
 
 # =================================================================
-# eaSway - Instalador Modular para SwayOS (Debian/LMDE)
-# Finalidad: Orquestador principal del proceso de instalación.
+# eaSway - Orquestador de Instalación
+# Basado en la estructura de archivos: raíz/scripts/
 # =================================================================
 
-# 1. Definición de Rutas Críticas
-# Obtenemos la ruta absoluta de este script
-SCRIPT_PATH=$(readlink -f "$0")
-# Subimos 2 niveles para llegar a la raíz del proyecto (desde src/cli/)
-REPO_ROOT=$(dirname $(dirname "$SCRIPT_PATH"))
+# 1. Configuración de Rutas (Navegación por el árbol de directorios)
+# Obtenemos la ruta absoluta de la carpeta donde está este script (eaSway/src/cli)
+BASE_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
-# Importar variables de color y estilo (opcional, para el diseño post-punk)
+# Subimos dos niveles para llegar a la raíz que vemos en tu imagen
+# Nivel 1: eaSway/src/ | Nivel 2: eaSway/ (RAÍZ)
+REPO_ROOT=$(cd "$BASE_DIR/../.." && pwd)
+
+# Definimos la ruta a la carpeta de scripts que está en la raíz
+SCRIPTS_DIR="$REPO_ROOT/scripts"
+
+# Colores para la interfaz Post-Punk
 GREEN='\033[0;32m'
 RED='\033[0;31m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
 echo -e "${GREEN}Iniciando eaSway - Entorno Post-Punk para Debian${NC}"
 
-# 2. Verificación de Seguridad
-if [ "$EUID" -eq 0 ]; then 
-    echo -e "${RED}Error: Por favor, no ejecutes este script como root (sudo).${NC}"
-    echo "El script te pedirá contraseña cuando sea necesario."
-    exit 1
-fi
+# 2. Función de ejecución modular
+run_step() {
+    local script_file="$1"
+    local description="$2"
+    local full_path="$SCRIPTS_DIR/$script_file"
 
-# 3. Función para ejecutar módulos de forma segura
-run_module() {
-    local module_path="$1"
-    local module_name="$2"
-    
-    echo -e "\n[i] Ejecutando: $module_name..."
-    if [ -f "$module_path" ]; then
-        bash "$module_path"
+    echo -e "\n[i] Pasos de: $description..."
+
+    if [ -f "$full_path" ]; then
+        # Ejecutamos el script usando 'bash' para asegurar compatibilidad
+        bash "$full_path"
         if [ $? -eq 0 ]; then
-            echo -e "${GREEN}✔ $module_name completado con éxito.${NC}"
+            echo -e "${GREEN}✔ $description finalizado.${NC}"
         else
-            echo -e "${RED}✘ Error en $module_name. Revisa los logs.${NC}"
-            # Aquí podríamos decidir si salir o continuar
+            echo -e "${RED}✘ Error durante $description.${NC}"
         fi
     else
-        echo -e "${RED}Error: No se encontró el módulo en $module_path${NC}"
+        echo -e "${RED}[!] ERROR: No se encontró $script_file en $SCRIPTS_DIR${NC}"
+        echo "Asegúrate de que el archivo existe en la carpeta 'scripts' de la raíz."
     fi
 }
 
-# 4. Secuencia de Instalación Fragmentada
-# Cada paso es un archivo independiente en la carpeta scripts/
-run_module "$REPO_ROOT/scripts/check_hardware.sh" "Detección de Hardware"
-run_module "$REPO_ROOT/scripts/install_packages.sh" "Instalación de Binarios"
-run_module "$REPO_ROOT/scripts/setup_configs.sh" "Despliegue de Dotfiles"
-run_module "$REPO_ROOT/scripts/post_install.sh" "Ajustes Finales de Sistema"
+# 3. Ejecución de la secuencia según la arquitectura del proyecto
+run_step "check_hardware.sh" "Detección de Hardware"
+run_step "install_packages.sh" "Instalación de Binarios"
+run_step "setup_config.sh" "Despliegue de Dotfiles"
+run_step "post_install.sh" "Ajustes Finales de Sistema"
 
-echo -e "\n${GREEN}Proceso finalizado. Reinicia para entrar en eaSway.${NC}"
+echo -e "\n${GREEN}Proceso de orquestación terminado.${NC}"
