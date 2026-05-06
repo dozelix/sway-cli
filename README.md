@@ -1,8 +1,8 @@
-# SwayOS Ecosystem
+# SwayCLI Ecosystem
 
 Un ecosistema integral de instalación y personalización para elevar la experiencia de Sway WM al siguiente nivel.
 
-SwayOS nace con el objetivo de eliminar la fricción inicial al configurar un gestor de ventanas tipo tiling. Ofrecemos una herramienta CLI potente, una interfaz gráfica intuitiva y una experiencia de escritorio pulida desde el primer segundo.
+SwayCLI nace con el objetivo de eliminar la fricción inicial al configurar un gestor de ventanas tipo tiling. Ofrecemos una herramienta CLI potente, una interfaz gráfica intuitiva y una experiencia de escritorio pulida desde el primer segundo.
 
 ## Tabla de Contenidos 
 

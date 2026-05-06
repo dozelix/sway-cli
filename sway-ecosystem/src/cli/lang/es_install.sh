@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # Mensajes en Español
-MSG_START="🌌 Iniciando SwayOS CLI Installer (Base Debian/LMDE)..."
-MSG_CHECKING="🔍 Verificando instalaciones previas..."
-MSG_INSTALL_BASE="📦 Instalando paquetes base para Sway..."
-MSG_CONFIG_ENV="⚙ Configurando entorno para"
-MSG_FINISH="✨ Instalación completada con éxito."
+MSG_START=" Iniciando SwayCLI Installer (Base Debian/LMDE)..."
+MSG_CHECKING=" Verificando instalaciones previas..."
+MSG_INSTALL_BASE=" Instalando paquetes base para Sway..."
+MSG_CONFIG_ENV=" Configurando entorno para"
+MSG_FINISH=" Instalación completada con éxito."
 
 # Colores[cite: 3]
 GREEN='\033[0;32m'

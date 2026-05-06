@@ -5,7 +5,7 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 clear
-echo -e "${BLUE} Welcome to SwayOS / Bienvenido a SwayOS${NC}"
+echo -e "${BLUE} Welcome to SwayCLI / Bienvenido a SwayCLI${NC}"
 echo "------------------------------------------"
 echo "Select your language / Selecciona tu idioma:"
 echo "1) English"
