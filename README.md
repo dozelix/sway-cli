@@ -94,4 +94,4 @@ Haz Push a la rama (git push origin feature/AmazingFeature).
 
 Abre un Pull Request.
 
-Desarrollado con ❤️ por la comunidad de Linux.
+Desarrollado con ❤️ por dozelix
