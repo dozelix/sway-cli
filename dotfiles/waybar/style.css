@@ -1,0 +1,64 @@
+/* eaSway - Waybar Style
+    Estética: Alto contraste / Brutalismo
+*/
+
+* {
+    border: none;
+    border-radius: 0;
+    font-family: "Noto Sans Bold", Helvetica, Arial, sans-serif;
+    font-size: 13px;
+    min-height: 0;
+}
+
+window#waybar {
+    background-color: #000000;
+    border-bottom: 3px solid #00ff00;
+    color: #ffffff;
+    transition-property: background-color;
+    transition-duration: .5s;
+}
+
+#workspaces button {
+    padding: 0 10px;
+    background-color: transparent;
+    color: #ffffff;
+    border-right: 2px solid #222222;
+}
+
+#workspaces button:hover {
+    background: #111111;
+    box-shadow: inset 0 -3px #00ff00;
+}
+
+#workspaces button.focused {
+    background-color: #00ff00;
+    color: #000000;
+}
+
+#clock, #battery, #cpu, #memory, #network, #pulseaudio, #tray {
+    padding: 0 12px;
+    color: #ffffff;
+    border-left: 2px solid #222222;
+}
+
+#clock {
+    color: #00ff00;
+    font-weight: bold;
+}
+
+#battery.critical:not(.charging) {
+    background-color: #ff0000;
+    color: #ffffff;
+    animation-name: blink;
+    animation-duration: 0.5s;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+}
+
+@keyframes blink {
+    to {
+        background-color: #ffffff;
+        color: #000000;
+    }
+}
