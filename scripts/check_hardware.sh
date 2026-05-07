@@ -1,15 +1,17 @@
 #!/bin/bash
 
 # =================================================================
+# Versión: 0.1
 # eaSway - Módulo de Detección de Hardware
-# Desarrollado por: dozelix
-# =================================================================
+# finalidad: verificar el entorno en el que se encuentra easway para evitar errores de configuracion en VM 
+# ================================================================
 
 # Colores
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
+#output a usuario
 echo -e "${BLUE}>> Iniciando verificación de hardware...${NC}"
 
 # 1. Detectar si estamos en un contenedor

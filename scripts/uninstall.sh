@@ -1,8 +1,9 @@
 #!/bin/bash
 
 # =================================================================
-# eaSway - Módulo de Desinstalación y Limpieza (Versión Segura)
-# Finalidad: Revertir los cambios para permitir pruebas repetitivas.
+# Versión: 0.1
+# eaSway - Módulo de Desinstalación y Limpieza
+# Finalidad: remover el entorno de forma segura para el usuario.
 # =================================================================
 
 RED='\033[0;31m'

@@ -1,11 +1,12 @@
 #!/bin/bash
 
 # =================================================================
+# Versión: 0.1
 # eaSway - Módulo de Configuración de Dotfiles
 # Finalidad: Instalar configuraciones con seguridad de backups.
 # =================================================================
 
-# Colores (Post-Punk)
+# Colores
 GREEN='\033[0;32m'
 CYAN='\033[0;36m'
 RED='\033[0;31m'

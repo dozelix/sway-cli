@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # =================================================================
+# Versión: 0.1
 # eaSway - Módulo de Instalación con Control de Errores
 # Finalidad: Garantizar que el entorno base esté presente.
-# Versión: 1.0 - Limpio de errores ShellCheck
 # =================================================================
 
 # Colores para la salida en terminal
