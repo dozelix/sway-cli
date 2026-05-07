@@ -5,6 +5,8 @@
 # Finalidad: Garantizar que el entorno base esté presente.
 # =================================================================
 
+
+
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 YELLOW='\033[1;33m'
@@ -27,7 +29,16 @@ check_install() {
 }
 
 # 3. Instalación de Críticos (Si uno falla, el script se detiene)
-sudo apt update
+# Verifica si el archivo de marca de tiempo de apt es viejo (más de 86400 segundos / 24h)
+last_update=$(stat -c %Y /var/lib/apt/periodic/update-success-stamp 2>/dev/null || echo 0)
+now=$(date +%s)
+
+if [ $((now - last_update)) -gt 86400 ]; then
+    echo "[i] Repositorios antiguos. Actualizando..."
+    sudo apt update
+else
+    echo "[OK] Repositorios actualizados recientemente. Saltando update."
+fi
 sudo apt install -y "$CRITICAL_PKGS"
 check_install "Componentes Core de Sway"
 
