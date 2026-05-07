@@ -34,7 +34,7 @@ run_step() {
     if [ -f "$full_path" ]; then
         # Ejecutamos el script usando 'bash' para asegurar compatibilidad
         bash "$full_path"
-        if ! comando; then
+        if [ $? -eq 0 ]; then
             echo -e "${GREEN}✔ $description finalizado.${NC}"
         else
             echo -e "${RED}✘ Error durante $description.${NC}"
