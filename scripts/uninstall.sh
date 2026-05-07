@@ -12,10 +12,10 @@ NC='\033[0m'
 echo -e "${RED}>> Iniciando desinstalación de eaSway...${NC}"
 
 # 1. Lista de paquetes a remover
-PKGS="sway waybar wofi mako-notifier xwayland swaybg swayidle swaylock grim slurp light pavucontrol"
-
+# En uninstall.sh
+PKGS=(sway waybar wofi mako-notifier xwayland swaybg swayidle swaylock grim slurp light pavucontrol)
+sudo apt purge -y "${PKGS[@]}"
 echo " - Eliminando paquetes..."
-sudo apt purge -y "$PKGS"
 sudo apt autoremove -y
 
 # 2. Restauración de archivos de configuración
