@@ -3,17 +3,12 @@
 # =================================================================
 # eaSway - Orquestador de Instalación
 # Basado en la estructura de archivos: raíz/scripts/
+# Desarrollado por: dozelix
 # =================================================================
 
-# 1. Configuración de Rutas (Navegación por el árbol de directorios)
-# Obtenemos la ruta absoluta de la carpeta donde está este script (eaSway/src/cli)
+# 1. Configuración de Rutas
 BASE_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-
-# Subimos dos niveles para llegar a la raíz que vemos en tu imagen
-# Nivel 1: eaSway/src/ | Nivel 2: eaSway/ (RAÍZ)
 REPO_ROOT=$(cd "$BASE_DIR/../.." && pwd)
-
-# Definimos la ruta a la carpeta de scripts que está en la raíz
 SCRIPTS_DIR="$REPO_ROOT/scripts"
 
 # Colores para la interfaz Post-Punk
@@ -23,7 +18,7 @@ NC='\033[0m'
 
 echo -e "${GREEN}Iniciando eaSway - Entorno Post-Punk para Debian${NC}"
 
-# 2. Función de ejecución modular
+# 2. Función de ejecución modular (Refactorizada para SC2181)
 run_step() {
     local script_file="$1"
     local description="$2"
@@ -32,9 +27,9 @@ run_step() {
     echo -e "\n[i] Pasos de: $description..."
 
     if [ -f "$full_path" ]; then
-        # Ejecutamos el script usando 'bash' para asegurar compatibilidad
-        bash "$full_path"
-        if [ $? -eq 0 ]; then
+        # Corregido: Evaluamos el éxito del script directamente en el if
+        # Esto elimina la necesidad de $? y evita el error de la línea 37
+        if bash "$full_path"; then
             echo -e "${GREEN}✔ $description finalizado.${NC}"
         else
             echo -e "${RED}✘ Error durante $description.${NC}"
@@ -45,7 +40,7 @@ run_step() {
     fi
 }
 
-# 3. Ejecución de la secuencia según la arquitectura del proyecto
+# 3. Ejecución de la secuencia
 run_step "check_hardware.sh" "Detección de Hardware"
 run_step "install_packages.sh" "Instalación de Binarios"
 run_step "setup_config.sh" "Despliegue de Dotfiles"
