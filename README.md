@@ -16,7 +16,7 @@ Roadmap
 
 Contribuciones
 
-✨ Características Principales
+ Características Principales
 
 1. Sway-CLI Installer
 
