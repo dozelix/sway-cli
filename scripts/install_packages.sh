@@ -28,12 +28,12 @@ check_install() {
 
 # 3. Instalación de Críticos (Si uno falla, el script se detiene)
 sudo apt update
-sudo apt install -y $CRITICAL_PKGS
+sudo apt install -y "$CRITICAL_PKGS"
 check_install "Componentes Core de Sway"
 
 # 4. Instalación de Utilidades (Si fallan, solo avisamos)
 echo -e "${YELLOW}>> Instalando utilidades y extras...${NC}"
-sudo apt install -y $UTILITY_PKGS
+sudo apt install -y "$UTILITY_PKGS"
 
 if [ $? -ne 0 ]; then
     echo -e "${YELLOW} [!] Algunos paquetes menores no se instalaron, revisa los logs más tarde.${NC}"

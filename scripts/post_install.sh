@@ -63,3 +63,7 @@ else
 fi
 
 echo -e "${GREEN}>> Ajustes de sistema completados con éxito.${NC}"
+
+read -n 1 -s -r -p "Presiona cualquier tecla para salir..."
+echo
+exit 0
