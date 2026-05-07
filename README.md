@@ -1,4 +1,4 @@
-# SwayCLI Ecosystem
+# eaSway Ecosystem
 
 Un ecosistema integral de instalación y personalización para elevar la experiencia de Sway WM al siguiente nivel.
 
@@ -24,11 +24,11 @@ El núcleo del proyecto. Un instalador inteligente desarrollado para ser rápido
 
 Hardware-Aware: Detección automática de GPU (Intel, AMD, NVIDIA) y aplicación de parches necesarios para Wayland.
 
-Selección de Componentes: Tú eliges qué instalar: Waybar, Mako, Rofi-Wayland, Wlogout, etc.
+Selección de Componentes: Tú eliges qué instalar: Waybar, Mako, Rofi-Wayland, Wlogout, etc. (aún no configurado)
 
 Configuración de Laptops: Optimización de gestos táctiles y gestión de energía (TLP / Auto-cpufreq).
 
-2. Sway-GUI (The "Easy" Way)
+2. Sway-GUI (The "Easy" Way)(aún no configurado)
 
 Una interfaz gráfica moderna construida en GTK4/Libadwaita para aquellos que prefieren una experiencia visual guiada. Ideal para usuarios que migran desde GNOME o KDE.
 
