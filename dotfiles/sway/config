@@ -1,163 +1,139 @@
-#!/bin/bash
-
 # =================================================================
-# Versión: 0.0.1-alpha
-# eaSway - Módulo de Detección de Hardware
-# Finalidad: Verificar el entorno antes de la instalación para
-#            evitar errores de configuración en VM y Docker.
-# Cambios v0.0.2-alpha:
-#   - Detección granular de GPU: Intel, AMD, NVIDIA (SW-08)
-#   - Advertencia accionable si se detecta NVIDIA (Wayland quirks)
-#   - Detección de entorno gráfico previo (X11 vs Wayland)
-#   - Verificación de dependencias mínimas del sistema
-#   - Salida estructurada compatible con el orquestador main.sh
+# eaSway - Configuración de Sway WM
+# Versión: 0.0.1 — 08-05-2026
+# Estética: Neobrutalista / Post-Punk
+# Desarrollador: dozelix
+# Cambios v0.0.2:
+#   - SW-06: Guard de XDG_RUNTIME_DIR con creación automática
+#   - Workspaces ampliados a 6 (con movimiento incluido)
+#   - Orden de autostart garantizado (mako antes que waybar)
+#   - Sección de flotantes añadida
+#   - Captura de pantalla con grim+slurp integrada
 # =================================================================
 
-# --- Colores ---
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-NC='\033[0m'
+# =================================================================
+# --- VARIABLES GLOBALES ---
+# =================================================================
+set $mod Mod4
+set $left h
+set $down j
+set $up k
+set $right l
 
-# --- Contadores de advertencias ---
-WARNINGS=0
-
-echo -e "${BLUE}>> Iniciando verificación de hardware...${NC}"
-echo -e "   ----------------------------------------"
+# Aplicaciones preferidas
+set $term foot
+set $menu wofi --show drun --prompt "Ejecutar..."
+set $screenshot_full grim ~/capturas/screenshot_$(date +%Y%m%d_%H%M%S).png
+set $screenshot_area grim -g "$(slurp)" ~/capturas/screenshot_$(date +%Y%m%d_%H%M%S).png
 
 # =================================================================
-# 1. DETECCIÓN DE ENTORNO CONTENEDOR / VIRTUAL
+# --- GUARD: XDG_RUNTIME_DIR (SW-06) ---
+# Crea el directorio de runtime si no existe antes de que
+# cualquier componente Wayland intente usarlo.
 # =================================================================
-# Guard principal: si estamos en Docker, no hay hardware real.
-# Saltamos las pruebas físicas de forma segura y limpia.
-if [ -f /.dockerenv ]; then
-    echo -e "${YELLOW}[!] Entorno Docker detectado. Saltando todas las pruebas físicas.${NC}"
-    echo -e "${GREEN}>> Verificación completada (modo contenedor).${NC}"
-    exit 0
-fi
+exec_always mkdir -p "$XDG_RUNTIME_DIR"
+exec_always chmod 700 "$XDG_RUNTIME_DIR"
 
-# Detección de máquina virtual (VMware, VirtualBox, KVM)
-if command -v systemd-detect-virt &>/dev/null; then
-    VIRT_ENV=$(systemd-detect-virt 2>/dev/null)
-    if [ "$VIRT_ENV" != "none" ]; then
-        echo -e "${YELLOW}   [!] Entorno virtualizado detectado: $VIRT_ENV${NC}"
-        echo -e "       Las pruebas de hardware continuarán, pero los resultados pueden variar."
-        WARNINGS=$((WARNINGS + 1))
-    fi
-fi
+# Directorio de capturas de pantalla
+exec_always mkdir -p ~/capturas
 
 # =================================================================
-# 2. ARQUITECTURA DEL SISTEMA
+# --- ESTÉTICA DE VENTANAS ---
 # =================================================================
-ARCH=$(uname -m)
-echo -e "   - Arquitectura del sistema: ${ARCH}"
-
-if [ "$ARCH" != "x86_64" ]; then
-    echo -e "${RED}   [!] ADVERTENCIA: eaSway está optimizado para x86_64.${NC}"
-    echo -e "       La arquitectura detectada ($ARCH) puede causar problemas."
-    WARNINGS=$((WARNINGS + 1))
-fi
+default_border pixel 4
+default_floating_border pixel 4
+gaps inner 12
+gaps outer 4
+smart_gaps on
+font pango:Noto Sans Bold 11
 
 # =================================================================
-# 3. TIPO DE DISPOSITIVO (LAPTOP VS DESKTOP)
+# --- COLORES (Post-Punk Palette) ---
+# class                 border    backgr.   text      indicator  child_border
 # =================================================================
-if [ -d /sys/class/power_supply/BAT0 ] || [ -d /sys/class/power_supply/BAT1 ]; then
-    DEVICE_TYPE="Laptop"
-    echo -e "   - Tipo de dispositivo: ${DEVICE_TYPE} (batería detectada)"
-    echo -e "       [i] Se recomienda instalar 'tlp' para gestión de energía."
-else
-    DEVICE_TYPE="Desktop / VM"
-    echo -e "   - Tipo de dispositivo: ${DEVICE_TYPE}"
-fi
+client.focused          #00ff00   #000000   #ffffff   #00ff00    #00ff00
+client.focused_inactive #444444   #222222   #ffffff   #444444    #444444
+client.unfocused        #222222   #222222   #888888   #222222    #222222
+client.urgent           #ff0000   #000000   #ffffff   #ff0000    #ff0000
 
 # =================================================================
-# 4. DETECCIÓN GRANULAR DE GPU (CRÍTICO PARA WAYLAND)
+# --- ATAJOS DE TECLADO (KEYBINDINGS) ---
 # =================================================================
-# Usamos lspci de forma robusta. Si no está disponible, avisamos.
-if ! command -v lspci &>/dev/null; then
-    echo -e "${YELLOW}   [!] 'lspci' no encontrado. No se puede detectar la GPU.${NC}"
-    echo -e "       Instala 'pciutils' para habilitar esta comprobación."
-    WARNINGS=$((WARNINGS + 1))
-else
-    # Extraemos el nombre completo de la GPU para diagnóstico
-    GPU_RAW=$(lspci | grep -iE 'vga|display|3d controller' | head -n 1)
-    # shellcheck disable=SC2001
-    GPU_NAME=$(echo "$GPU_RAW" | sed 's/.*: //')
 
-    echo -e "   - GPU detectada: ${GPU_NAME:-Desconocida}"
+# Aplicaciones esenciales
+bindsym $mod+Return exec $term
+bindsym $mod+d exec $menu
+bindsym $mod+q kill
 
-    # Clasificación del fabricante para aplicar lógica específica
-    if echo "$GPU_RAW" | grep -qi "nvidia"; then
-        GPU_VENDOR="NVIDIA"
-        echo -e "${YELLOW}   [!] GPU NVIDIA detectada.${NC}"
-        echo -e "       Wayland en NVIDIA requiere pasos adicionales:"
-        echo -e "         1. Driver propietario (nvidia-drm) con modeset=1"
-        echo -e "         2. Variable de entorno: LIBVA_DRIVER_NAME=nvidia"
-        echo -e "         3. Verificar que 'nvidia-drm' esté en los módulos del kernel."
-        WARNINGS=$((WARNINGS + 1))
+# Gestión del compositor
+bindsym $mod+Shift+c reload
+bindsym $mod+Shift+e exec swaynag -t warning -m '¿salir de eaSway?' -b 'Confirmar' 'swaymsg exit'
 
-    elif echo "$GPU_RAW" | grep -qi "amd\|radeon\|advanced micro"; then
-        GPU_VENDOR="AMD"
-        echo -e "${GREEN}   [OK] GPU AMD/Radeon detectada. Excelente soporte nativo en Wayland.${NC}"
+# Capturas de pantalla
+bindsym Print exec $screenshot_full
+bindsym $mod+Print exec $screenshot_area
 
-    elif echo "$GPU_RAW" | grep -qi "intel"; then
-        GPU_VENDOR="Intel"
-        echo -e "${GREEN}   [OK] GPU Intel detectada. Buen soporte nativo en Wayland.${NC}"
+# Movimiento de foco (Estilo Vim)
+bindsym $mod+$left focus left
+bindsym $mod+$down focus down
+bindsym $mod+$up focus up
+bindsym $mod+$right focus right
 
-    else
-        # shellcheck disable=SC2034
-        GPU_VENDOR="Desconocido"
-        echo -e "${YELLOW}   [?] Fabricante de GPU no identificado. Continúa con precaución.${NC}"
-        WARNINGS=$((WARNINGS + 1))
-    fi
-fi
+# Movimiento de ventanas
+bindsym $mod+Shift+$left move left
+bindsym $mod+Shift+$down move down
+bindsym $mod+Shift+$up move up
+bindsym $mod+Shift+$right move right
 
-# =================================================================
-# 5. ENTORNO GRÁFICO ACTIVO (X11 VS WAYLAND)
-# =================================================================
-echo -e "   ----------------------------------------"
-echo -e "   - Verificando sesión gráfica activa..."
+# Redimensionado de ventanas
+mode "resize"{
+    bindsym $left resize shrink width 10px
+    bindsym $right resize grow width 10px
+    bindsym $up resize shrink height 10px
+    bindsym $down resize grow height 10px
+    bindsym Return mode "default"
+    bindsym Escape mode "default"
+}
+bindsym $mod+r mode "resize"
 
-if [ -n "$WAYLAND_DISPLAY" ]; then
-    echo -e "${YELLOW}   [!] Ya hay una sesión Wayland activa (\$WAYLAND_DISPLAY=$WAYLAND_DISPLAY).${NC}"
-    echo -e "       Instalar eaSway dentro de una sesión Wayland existente puede causar conflictos."
-    WARNINGS=$((WARNINGS + 1))
-elif [ -n "$DISPLAY" ]; then
-    echo -e "   [i] Sesión X11 activa (\$DISPLAY=$DISPLAY). eaSway instalará Sway sobre X."
-else
-    echo -e "${GREEN}   [OK] Sin sesión gráfica activa. Entorno ideal para la instalación.${NC}"
-fi
+# Layouts
+bindsym $mod+s layout stacking
+bindsym $mod+w layout tabbed
+bindsym $mod+e layout toggle split
+bindsym $mod+f fullscreen toggle
+bindsym $mod+Shift+space floating toggle
+bindsym $mod+space focus mode_toggle
 
 # =================================================================
-# 6. DEPENDENCIAS MÍNIMAS DEL SISTEMA
+# --- GESTIÓN DE ESPACIOS DE TRABAJO (6 workspaces) ---
 # =================================================================
-echo -e "   ----------------------------------------"
-echo -e "   - Verificando dependencias mínimas..."
+bindsym $mod+1 workspace number 1
+bindsym $mod+2 workspace number 2
+bindsym $mod+3 workspace number 3
+bindsym $mod+4 workspace number 4
+bindsym $mod+5 workspace number 5
+bindsym $mod+6 workspace number 6
 
-REQUIRED_CMDS=("bash" "apt" "sudo" "cp" "mkdir" "find")
-ALL_OK=true
-
-for cmd in "${REQUIRED_CMDS[@]}"; do
-    if ! command -v "$cmd" &>/dev/null; then
-        echo -e "${RED}   [ERROR] Dependencia crítica no encontrada: '$cmd'${NC}"
-        ALL_OK=false
-    fi
-done
-
-if [ "$ALL_OK" = true ]; then
-    echo -e "${GREEN}   [OK] Todas las dependencias del sistema están presentes.${NC}"
-fi
+# Mover ventana a espacio de trabajo
+bindsym $mod+Shift+1 move container to workspace number 1
+bindsym $mod+Shift+2 move container to workspace number 2
+bindsym $mod+Shift+3 move container to workspace number 3
+bindsym $mod+Shift+4 move container to workspace number 4
+bindsym $mod+Shift+5 move container to workspace number 5
+bindsym $mod+Shift+6 move container to workspace number 6
 
 # =================================================================
-# 7. RESUMEN FINAL
+# --- REGLAS DE VENTANAS FLOTANTES ---
 # =================================================================
-echo -e "   ----------------------------------------"
+for_window [app_id="pavucontrol"] floating enable, resize set 700 400
+for_window [app_id="thunar"] floating enable, resize set 900 600
+for_window [app_id="nm-connection-editor"] floating enable
 
-if [ "$WARNINGS" -gt 0 ]; then
-    echo -e "${YELLOW}>> Verificación completada con $WARNINGS advertencia(s). Revisa los mensajes anteriores.${NC}"
-else
-    echo -e "${GREEN}>> Verificación de hardware completada sin problemas.${NC}"
-fi
-
-exit 0
+# =================================================================
+# --- EJECUCIÓN AUTOMÁTICA (AUTOSTART) ---
+# Orden importa: mako (notificaciones) debe iniciar antes que waybar
+# para capturar notificaciones tempranas del sistema.
+# =================================================================
+exec mako
+exec waybar
+exec_always dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=sway
