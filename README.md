@@ -61,7 +61,7 @@ Actualmente el proyecto se encuentra en fase Alpha. Puedes probar el instalador 
 git clone [https://github.com/dozelix/eaSway.git](https://github.com/dozelix/eaSway.git)
 
 # Entrar al directorio
-cd sway-ecosystem
+cd eaSway/src/cli
 
 # Ejecutar el instalador CLI
 chmod +x main.sh
