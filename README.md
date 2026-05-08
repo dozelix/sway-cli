@@ -64,7 +64,6 @@ git clone [https://github.com/dozelix/eaSway.git](https://github.com/dozelix/eaS
 cd eaSway/src/cli
 
 # Ejecutar el instalador CLI
-chmod +x main.sh
 ./main.sh
 
 
