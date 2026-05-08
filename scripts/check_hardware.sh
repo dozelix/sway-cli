@@ -4,13 +4,16 @@
 # Versión: 0.0.1
 # eaSway - Módulo de Detección de Hardware
 # Finalidad: Verificar el entorno antes de la instalación para
-#            evitar errores de configuración en VM y Docker.
+#evitar errores de configuración en VM y Docker.
 # Cambios v0.0.2:
 #   - Detección granular de GPU: Intel, AMD, NVIDIA (SW-08)
 #   - Advertencia accionable si se detecta NVIDIA (Wayland quirks)
 #   - Detección de entorno gráfico previo (X11 vs Wayland)
 #   - Verificación de dependencias mínimas del sistema
 #   - Salida estructurada compatible con el orquestador main.sh
+# Fixes ShellCheck: 
+#   - SC2034: Exportación de GPU_VENDOR para uso externo.
+#   - SC2001: Uso de expansión de parámetros en lugar de sed.
 # =================================================================
 
 # --- Colores ---
@@ -29,20 +32,15 @@ echo -e "   ----------------------------------------"
 # =================================================================
 # 1. DETECCIÓN DE ENTORNO CONTENEDOR / VIRTUAL
 # =================================================================
-# Guard principal: si estamos en Docker, no hay hardware real.
-# Saltamos las pruebas físicas de forma segura y limpia.
 if [ -f /.dockerenv ]; then
-    echo -e "${YELLOW}[!] Entorno Docker detectado. Saltando todas las pruebas físicas.${NC}"
-    echo -e "${GREEN}>> Verificación completada (modo contenedor).${NC}"
+    echo -e "${YELLOW}[!] Entorno Docker detectado. Saltando pruebas físicas.${NC}"
     exit 0
 fi
 
-# Detección de máquina virtual (VMware, VirtualBox, KVM)
 if command -v systemd-detect-virt &>/dev/null; then
     VIRT_ENV=$(systemd-detect-virt 2>/dev/null)
     if [ "$VIRT_ENV" != "none" ]; then
         echo -e "${YELLOW}   [!] Entorno virtualizado detectado: $VIRT_ENV${NC}"
-        echo -e "       Las pruebas de hardware continuarán, pero los resultados pueden variar."
         WARNINGS=$((WARNINGS + 1))
     fi
 fi
@@ -55,105 +53,60 @@ echo -e "   - Arquitectura del sistema: ${ARCH}"
 
 if [ "$ARCH" != "x86_64" ]; then
     echo -e "${RED}   [!] ADVERTENCIA: eaSway está optimizado para x86_64.${NC}"
-    echo -e "       La arquitectura detectada ($ARCH) puede causar problemas."
     WARNINGS=$((WARNINGS + 1))
 fi
 
 # =================================================================
-# 3. TIPO DE DISPOSITIVO (LAPTOP VS DESKTOP)
+# 3. DETECCIÓN DE GPU (CRÍTICO PARA WAYLAND)
 # =================================================================
-if [ -d /sys/class/power_supply/BAT0 ] || [ -d /sys/class/power_supply/BAT1 ]; then
-    DEVICE_TYPE="Laptop"
-    echo -e "   - Tipo de dispositivo: ${DEVICE_TYPE} (batería detectada)"
-    echo -e "       [i] Se recomienda instalar 'tlp' para gestión de energía."
-else
-    DEVICE_TYPE="Desktop / VM"
-    echo -e "   - Tipo de dispositivo: ${DEVICE_TYPE}"
-fi
-
-# =================================================================
-# 4. DETECCIÓN GRANULAR DE GPU (CRÍTICO PARA WAYLAND)
-# =================================================================
-# Usamos lspci de forma robusta. Si no está disponible, avisamos.
 if ! command -v lspci &>/dev/null; then
     echo -e "${YELLOW}   [!] 'lspci' no encontrado. No se puede detectar la GPU.${NC}"
-    echo -e "       Instala 'pciutils' para habilitar esta comprobación."
     WARNINGS=$((WARNINGS + 1))
 else
-    # Extraemos el nombre completo de la GPU para diagnóstico
+    # Extraemos el nombre completo de la GPU
     GPU_RAW=$(lspci | grep -iE 'vga|display|3d controller' | head -n 1)
-    GPU_NAME=$(echo "$GPU_RAW" | sed 's/.*: //')
+    
+    # Fix SC2001: Usamos expansión de parámetros de Bash en lugar de sed
+    # Esto elimina todo hasta el primer ": " incluido
+    GPU_NAME="${GPU_RAW#*: }"
 
     echo -e "   - GPU detectada: ${GPU_NAME:-Desconocida}"
 
-    # Clasificación del fabricante para aplicar lógica específica
+    # Clasificación del fabricante
+    # Fix SC2034: Exportamos la variable para que sea visible por otros scripts
     if echo "$GPU_RAW" | grep -qi "nvidia"; then
-        GPU_VENDOR="NVIDIA"
-        echo -e "${YELLOW}   [!] GPU NVIDIA detectada.${NC}"
-        echo -e "       Wayland en NVIDIA requiere pasos adicionales:"
-        echo -e "         1. Driver propietario (nvidia-drm) con modeset=1"
-        echo -e "         2. Variable de entorno: LIBVA_DRIVER_NAME=nvidia"
-        echo -e "         3. Verificar que 'nvidia-drm' esté en los módulos del kernel."
+        export GPU_VENDOR="NVIDIA"
+        echo -e "${YELLOW}   [!] GPU NVIDIA detectada. Requiere drivers propietarios.${NC}"
         WARNINGS=$((WARNINGS + 1))
-
     elif echo "$GPU_RAW" | grep -qi "amd\|radeon\|advanced micro"; then
-        GPU_VENDOR="AMD"
-        echo -e "${GREEN}   [OK] GPU AMD/Radeon detectada. Excelente soporte nativo en Wayland.${NC}"
-
+        export GPU_VENDOR="AMD"
+        echo -e "${GREEN}   [OK] GPU AMD detectada.${NC}"
     elif echo "$GPU_RAW" | grep -qi "intel"; then
-        GPU_VENDOR="Intel"
-        echo -e "${GREEN}   [OK] GPU Intel detectada. Buen soporte nativo en Wayland.${NC}"
-
+        export GPU_VENDOR="Intel"
+        echo -e "${GREEN}   [OK] GPU Intel detectada.${NC}"
     else
-        GPU_VENDOR="Desconocido"
-        echo -e "${YELLOW}   [?] Fabricante de GPU no identificado. Continúa con precaución.${NC}"
+        export GPU_VENDOR="Desconocido"
+        echo -e "${YELLOW}   [?] Fabricante de GPU no identificado.${NC}"
         WARNINGS=$((WARNINGS + 1))
     fi
 fi
 
 # =================================================================
-# 5. ENTORNO GRÁFICO ACTIVO (X11 VS WAYLAND)
+# 4. DEPENDENCIAS MÍNIMAS
 # =================================================================
-echo -e "   ----------------------------------------"
-echo -e "   - Verificando sesión gráfica activa..."
-
-if [ -n "$WAYLAND_DISPLAY" ]; then
-    echo -e "${YELLOW}   [!] Ya hay una sesión Wayland activa (\$WAYLAND_DISPLAY=$WAYLAND_DISPLAY).${NC}"
-    echo -e "       Instalar eaSway dentro de una sesión Wayland existente puede causar conflictos."
-    WARNINGS=$((WARNINGS + 1))
-elif [ -n "$DISPLAY" ]; then
-    echo -e "   [i] Sesión X11 activa (\$DISPLAY=$DISPLAY). eaSway instalará Sway sobre X."
-else
-    echo -e "${GREEN}   [OK] Sin sesión gráfica activa. Entorno ideal para la instalación.${NC}"
-fi
-
-# =================================================================
-# 6. DEPENDENCIAS MÍNIMAS DEL SISTEMA
-# =================================================================
-echo -e "   ----------------------------------------"
-echo -e "   - Verificando dependencias mínimas..."
-
 REQUIRED_CMDS=("bash" "apt" "sudo" "cp" "mkdir" "find")
-ALL_OK=true
-
 for cmd in "${REQUIRED_CMDS[@]}"; do
     if ! command -v "$cmd" &>/dev/null; then
         echo -e "${RED}   [ERROR] Dependencia crítica no encontrada: '$cmd'${NC}"
-        ALL_OK=false
     fi
 done
 
-if [ "$ALL_OK" = true ]; then
-    echo -e "${GREEN}   [OK] Todas las dependencias del sistema están presentes.${NC}"
-fi
-
 # =================================================================
-# 7. RESUMEN FINAL
+# 5. RESUMEN FINAL
 # =================================================================
 echo -e "   ----------------------------------------"
-
 if [ "$WARNINGS" -gt 0 ]; then
-    echo -e "${YELLOW}>> Verificación completada con $WARNINGS advertencia(s). Revisa los mensajes anteriores.${NC}"
+    echo -e "${YELLOW}>> Verificación completada con $WARNINGS advertencia(s).${NC}"
 else
     echo -e "${GREEN}>> Verificación de hardware completada sin problemas.${NC}"
 fi

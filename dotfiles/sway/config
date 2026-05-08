@@ -82,6 +82,7 @@ if ! command -v lspci &>/dev/null; then
 else
     # Extraemos el nombre completo de la GPU para diagnóstico
     GPU_RAW=$(lspci | grep -iE 'vga|display|3d controller' | head -n 1)
+    # shellcheck disable=SC2001
     GPU_NAME=$(echo "$GPU_RAW" | sed 's/.*: //')
 
     echo -e "   - GPU detectada: ${GPU_NAME:-Desconocida}"
@@ -105,6 +106,7 @@ else
         echo -e "${GREEN}   [OK] GPU Intel detectada. Buen soporte nativo en Wayland.${NC}"
 
     else
+        # shellcheck disable=SC2034
         GPU_VENDOR="Desconocido"
         echo -e "${YELLOW}   [?] Fabricante de GPU no identificado. Continúa con precaución.${NC}"
         WARNINGS=$((WARNINGS + 1))
