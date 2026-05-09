@@ -1,0 +1,41 @@
+# 1. Definir el argumento antes del FROM
+ARG USER=tester
+
+FROM ubuntu:22.04
+
+# 2. IMPORTANTE: Re-declarar el ARG dentro de la imagen para que esté disponible
+ARG USER
+ENV USER=${USER}
+ENV HOME=/home/${USER}
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Instalación de dependencias de sistema y drivers para tu Intel
+RUN apt-get update && apt-get install -y \
+    sudo \
+    bash \
+    coreutils \
+    util-linux \
+    libgl1-mesa-dri \
+    libglx-mesa0 \
+    mesa-vulkan-drivers \
+    libosmesa6 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Crear el usuario dinámico y darle permisos de sudo
+RUN useradd -m -s /bin/bash ${USER} && \
+    echo "${USER} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+# Crear el directorio de runtime que Sway exige (evita el error XDG_RUNTIME_DIR)
+RUN mkdir -p /tmp/runtime-${USER} && \
+    chmod 700 /tmp/runtime-${USER} && \
+    chown ${USER}:${USER} /tmp/runtime-${USER}
+
+WORKDIR ${HOME}/eaSway
+
+# Asegurar que los archivos copiados pertenezcan al usuario
+COPY --chown=${USER}:${USER} . .
+
+USER ${USER}
+
+ENV XDG_RUNTIME_DIR=/tmp/runtime-${USER}
