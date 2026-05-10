@@ -8,7 +8,7 @@
  #(ej. libegl1-mesa en Debian 12)
 # =================================================================
 
-# --- Colores para la salida en terminal ---
+#def colors
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 YELLOW='\033[1;33m'
@@ -38,10 +38,10 @@ echo -e "${BLUE}   - Arquitectura: $ARCH${NC}"
 OS_ID=$(grep '^ID=' /etc/os-release | cut -d'=' -f2 | tr -d '"')
 OS_VER=$(grep '^VERSION_ID=' /etc/os-release | cut -d'=' -f2 | tr -d '"')
 
-# Definir la base del array
+# def base array
 WAYLAND_CORE=("wayland-protocols" "libwayland-egl1" "mesa-utils" "xwayland")
 
-# Lógica condicional de inyección
+# logic condicional inyección
 if [ "$OS_ID" = "debian" ] && [ "$OS_VER" = "12" ]; then
     # Caso Debian 12 (Bookworm)
     WAYLAND_CORE+=("libegl1-mesa")
@@ -53,7 +53,7 @@ fi
 echo "[i] OS detectado: $OS_ID $OS_VER"
 echo "[i] Paquetes a instalar: ${WAYLAND_CORE[*]}"
 
-# Componentes críticos de easway (compositor, barra, launcher y notificador)
+# def compCritic easway (compositor, barra, launcher y notificador)
 CRITICAL_PKGS=(
     "sway"
     "waybar"

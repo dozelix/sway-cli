@@ -5,14 +5,21 @@
 # eaSway - Módulo de Configuración de Dotfiles
 # Finalidad: Instalar configuraciones con seguridad de backups.
 # =================================================================
-
-# Colores
+#def var array apps
+APPS=(
+    "sway"
+    "waybar"
+    "mako"
+    "kitty"
+    "wofi"
+)
+# def Colores
 GREEN='\033[0;32m'
 CYAN='\033[0;36m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-# 1. Definición de Rutas (Subimos un nivel desde /scripts para hallar la raíz)
+# 1. def Rutas (Subimos un nivel desde /scripts para hallar la raíz)
 REPO_ROOT=$(readlink -f "$(dirname "$0")/..")
 DOTFILES_DIR="$REPO_ROOT/dotfiles"
 TARGET_DIR="$HOME/.config"
@@ -25,9 +32,6 @@ if [ "$AVAILABLE_SPACE" -lt 51200 ]; then
     echo -e "${RED}[ERROR] Espacio insuficiente en HOME para realizar backups.${NC}"
     exit 1
 fi
-
-# 3. Lista de aplicaciones a configurar
-APPS=("sway" "waybar" "mako" "kitty" "wofi")
 
 for APP in "${APPS[@]}"; do
     SRC="$DOTFILES_DIR/$APP"

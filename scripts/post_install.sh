@@ -6,7 +6,7 @@
 # Finalidad: Configurar el sistema de forma dinámica y genérica.
 # =================================================================
 
-#colores
+#def colors
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
@@ -15,14 +15,13 @@ NC='\033[0m'
 #output al usuario
 echo -e "${YELLOW}>> Iniciando ajustes finales de sistema...${NC}"
 
-# 1. Configuración de Grupos (Dinámica)
-# Obtenemos el usuario actual de forma genérica
+# 1. conf Grupos (dinamic)
+# get user whoami
 TARGET_USER="${USER:-$(whoami)}"
 
 echo -e "   - Configurando acceso a hardware para el usuario: '${TARGET_USER}'..."
 
 if id "$TARGET_USER" &>/dev/null; then
-    # Evaluación directa para cumplir con ShellCheck
     if sudo usermod -aG video,input "$TARGET_USER"; then
         echo -e "${GREEN}   [OK] Usuario '${TARGET_USER}' añadido a grupos video e input.${NC}"
     else
