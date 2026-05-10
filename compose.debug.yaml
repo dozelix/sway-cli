@@ -1,6 +1,0 @@
-services:
-  easway:
-    image: easway
-    build:
-      context: .
-      dockerfile: ./Dockerfile

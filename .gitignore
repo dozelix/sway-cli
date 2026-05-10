@@ -11,6 +11,7 @@ Thumbs.db
 # Entornos virtuales
 venv/
 .venv/
+*Dockerfile
 
 # Archivos de configuración
 *.env 
@@ -20,6 +21,3 @@ venv/
 # Archivos de base de datos
 *.db
 *.sqlite
-# Archivos de migración
-migrations/
-

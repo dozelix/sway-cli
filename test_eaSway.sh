@@ -39,13 +39,11 @@ echo "-----------------------------------------------------------"
 
 docker run -it --privileged \
     --name "$CONTAINER_NAME" \
-    --network=host \
+    --user 1000:1000 \
+    --env="WAYLAND_DISPLAY=$WAYLAND_DISPLAY" \
+    --env="XDG_RUNTIME_DIR=/run/user/1000" \
+    --volume="/run/user/1000:/run/user/1000" \
     --device /dev/dri:/dev/dri \
     --device /dev/input:/dev/input \
-    -e XDG_RUNTIME_DIR="$RUNTIME_DIR" \
-    -e WAYLAND_DISPLAY="$WAYLAND_DISPLAY" \
-    -e DISPLAY="$DISPLAY" \
-    -e XDG_SESSION_TYPE="wayland" \
-    -v "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY:$RUNTIME_DIR/$WAYLAND_DISPLAY" \
-    -v "$(pwd):/home/$HOST_USER/eaSway" \
+    -v "$(pwd):/home/dozelix/eaSway" \
     "$IMAGE_NAME" /bin/bash
