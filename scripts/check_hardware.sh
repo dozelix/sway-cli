@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # =================================================================
-# Versión: 0.0.1
+# Versión: 0.0.2
 # eaSway - Módulo de Detección de Hardware
 # Finalidad: Verificar el entorno antes de la instalación para
 #evitar errores de configuración en VM y Docker.
@@ -14,6 +14,9 @@
 # Fixes ShellCheck: 
 #   - SC2034: Exportación de GPU_VENDOR para uso externo.
 #   - SC2001: Uso de expansión de parámetros en lugar de sed.
+# v0.0.3_alpha:
+# implementacion de deteccion de bateria para laptop y export var
+# para añadir pkgs a install
 # =================================================================
 
 # --- Colores ---
@@ -56,6 +59,31 @@ if [ "$ARCH" != "x86_64" ]; then
     WARNINGS=$((WARNINGS + 1))
 fi
 
+# --- Detección de Tipo de Chasis (Laptop vs Desktop) ---
+IS_LAPTOP=false
+
+# 1. Comprobar chasis mediante DMI
+if [ -f /sys/class/dmi/id/chassis_type ]; then
+    CHASSIS_ID=$(cat /sys/class/dmi/id/chassis_type)
+    # Tipos 8, 9, 10, 11, 12 y 14 suelen ser portátiles
+    case "$CHASSIS_ID" in
+        8|9|10|11|12|14) IS_LAPTOP=true ;;
+    esac
+fi
+
+# 2. Doble comprobación: ¿Existe una batería?
+if [ -d /sys/class/power_supply/BAT0 ] || [ -d /sys/class/power_supply/BAT1 ]; then
+    IS_LAPTOP=true
+fi
+
+if [ "$IS_LAPTOP" = true ]; then
+    export DEVICE_TYPE="laptop"
+    echo -e "${GREEN}   [OK] Dispositivo detectado como Laptop.${NC}"
+else
+    export DEVICE_TYPE="desktop"
+    echo -e "   - Dispositivo detectado como Desktop."
+fi
+
 # =================================================================
 # 3. DETECCIÓN DE GPU (CRÍTICO PARA WAYLAND)
 # =================================================================
@@ -90,6 +118,8 @@ else
         WARNINGS=$((WARNINGS + 1))
     fi
 fi
+
+
 
 # =================================================================
 # 4. DEPENDENCIAS MÍNIMAS
