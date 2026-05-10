@@ -1,18 +1,14 @@
 #!/bin/bash
-
 # =================================================================
-# Versión: 0.0.1-alpha
+# Versión: 0.0.2-alpha
 # eaSway - Módulo de Instalación con Control de Errores
 # Finalidad: Garantizar que el entorno base esté presente.
-# Cambios v0.0.2-alpha:
-#   - SW-03: Condicional systemd antes de activar NetworkManager
-#   - SW-05: usermod corregido con variable TARGET_USER dinámica
-#   - Mejora: Validación de arquitectura (x86_64) al inicio
-#   - Mejora: Guard para entorno Docker (salta pasos incompatibles)
-#   - Fix: Orden de instalación Wayland -> Sway para evitar errores EGL
+# Cambios install v0.0.3-alpha:
+#implementacion de OS_ID y OS_VER para manejar casos específicos de paquetes
+ #(ej. libegl1-mesa en Debian 12)
 # =================================================================
 
-# --- Colores para la salida en terminal ---
+#def colors
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 YELLOW='\033[1;33m'
@@ -27,7 +23,6 @@ if [ -f /.dockerenv ]; then
     IN_DOCKER=true
     echo -e "${YELLOW}[!] Entorno Docker detectado. Algunos pasos serán omitidos.${NC}"
 fi
-
 # Validación de arquitectura
 ARCH=$(uname -m)
 if [ "$ARCH" != "x86_64" ]; then
@@ -39,23 +34,31 @@ echo -e "${BLUE}   - Arquitectura: $ARCH${NC}"
 # 1. DEFINICIÓN DE PAQUETES POR PRIORIDAD
 # =================================================================
 
-# Librerías de protocolos y renderizado (Deben ir primero)
-WAYLAND_CORE=(
-    "wayland-protocols"
-    "libwayland-egl1"
-    "libegl1-mesa"
-    "mesa-utils"
-    "xwayland"
-)
+# Extraer ID y VERSION_ID manualmente para evitar errores de 'source'
+OS_ID=$(grep '^ID=' /etc/os-release | cut -d'=' -f2 | tr -d '"')
+OS_VER=$(grep '^VERSION_ID=' /etc/os-release | cut -d'=' -f2 | tr -d '"')
 
-# Componentes críticos del entorno
+# def base array
+WAYLAND_CORE=("wayland-protocols" "libwayland-egl1" "mesa-utils" "xwayland")
+
+# logic condicional inyección
+if [ "$OS_ID" = "debian" ] && [ "$OS_VER" = "12" ]; then
+    # Caso Debian 12 (Bookworm)
+    WAYLAND_CORE+=("libegl1-mesa")
+else
+    # Caso Debian 13+, Ubuntu 24.04/26.04 y Docker (Trixie)
+    WAYLAND_CORE+=("libegl1" "libgl1-mesa-dri")
+fi
+
+echo "[i] OS detectado: $OS_ID $OS_VER"
+echo "[i] Paquetes a instalar: ${WAYLAND_CORE[*]}"
+
+# def compCritic easway (compositor, barra, launcher y notificador)
 CRITICAL_PKGS=(
     "sway"
     "waybar"
     "wofi"
-    "mako-notifier"
-)
-
+    "mako-notifier")
 # Utilidades y aplicaciones de usuario
 UTILITY_PKGS=(
     "swaybg"
@@ -68,8 +71,7 @@ UTILITY_PKGS=(
     "network-manager-gnome"
     "thunar"
     "kitty"
-    "foot"
-)
+    "foot")
 
 # =================================================================
 # 2. ACTUALIZACIÓN INTELIGENTE DE REPOSITORIOS
