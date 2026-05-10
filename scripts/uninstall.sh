@@ -4,6 +4,9 @@
 # Versión: 0.1
 # eaSway - Módulo de Desinstalación y Limpieza
 # Finalidad: remover el entorno de forma segura para el usuario.
+# cambios uninstall 0.0.3_alpha:
+# implementar un array en PKGS
+# Validar si el array tiene elementos antes de proceder
 # =================================================================
 
 RED='\033[0;31m'
@@ -13,11 +16,27 @@ NC='\033[0m'
 echo -e "${RED}>> Iniciando desinstalación de eaSway...${NC}"
 
 # 1. Lista de paquetes a remover
-# En uninstall.sh
-PKGS=(sway waybar wofi mako-notifier xwayland swaybg swayidle swaylock grim slurp light pavucontrol)
-sudo apt purge -y "${PKGS[@]}"
-echo " - Eliminando paquetes..."
-sudo apt autoremove -y
+PKGS=(
+    "sway"
+    "waybar"
+    "wofi"
+    "mako-notifier"
+    "xwayland"
+    "swaybg"
+    "swayidle"
+    "swaylock"
+    "grim"
+    "slurp"
+    "light"
+    "pavucontrol"
+)
+    
+# Validar si el array tiene elementos antes de proceder
+if [ ${#PKGS[@]} -gt 0 ]; then
+    echo ">> Iniciando purga de paquetes..."
+    sudo apt purge -y "${PKGS[@]}"
+    sudo apt autoremove -y
+fi
 
 # 2. Restauración de archivos de configuración
 echo " - Restaurando backups de .config..."

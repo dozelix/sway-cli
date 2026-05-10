@@ -3,7 +3,7 @@
 # Versión: 0.0.2-alpha
 # eaSway - Módulo de Instalación con Control de Errores
 # Finalidad: Garantizar que el entorno base esté presente.
-# Cambios v0.0.3-alpha:
+# Cambios install v0.0.3-alpha:
 #implementacion de OS_ID y OS_VER para manejar casos específicos de paquetes
  #(ej. libegl1-mesa en Debian 12)
 # =================================================================
