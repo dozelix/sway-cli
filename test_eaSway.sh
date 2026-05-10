@@ -21,7 +21,7 @@ docker rm -f "$CONTAINER_NAME" 2>/dev/null
 echo ">> Construyendo imagen de prueba para usuario: $HOST_USER..."
 
 # PASO CLAVE: Manejo de errores directo (SC2181 corregido)
-if ! docker build --build-arg USER="$HOST_USER" -t "$IMAGE_NAME" -f Dockerfile.test .; then
+if ! docker build --build-arg USER="$HOST_USER" -t "$IMAGE_NAME" -f Dockerfile .; then
     echo "-----------------------------------------------------------"
     echo " FALLO CRÍTICO: No se pudo construir la imagen de Docker.  "
     echo " Revisa el Dockerfile.test y los logs de arriba.           "
