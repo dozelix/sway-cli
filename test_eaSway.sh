@@ -36,10 +36,14 @@ echo " XDG_RUNTIME_DIR:  $RUNTIME_DIR"
 echo "-----------------------------------------------------------"
 
 # Ejecución ajustada al hardware Intel y sincronización de volumen (Tarea #01)
-docker run -it \
-    --privileged \
+
+docker run -it --privileged \
     --name "$CONTAINER_NAME" \
+    --user 1000:1000 \
+    --env="WAYLAND_DISPLAY=$WAYLAND_DISPLAY" \
+    --env="XDG_RUNTIME_DIR=/run/user/1000" \
+    --volume="/run/user/1000:/run/user/1000" \
     --device /dev/dri:/dev/dri \
-    -e XDG_RUNTIME_DIR="$RUNTIME_DIR" \
-    -v "$(pwd):/home/$HOST_USER/eaSway" \
+    --device /dev/input:/dev/input \
+    -v "$(pwd):/home/dozelix/eaSway" \
     "$IMAGE_NAME" /bin/bash
