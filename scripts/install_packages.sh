@@ -70,6 +70,11 @@ UTILITY_PKGS=(
     "kitty"
     "foot"
 )
+    "foot")
+if [ "$DEVICE_TYPE" = "laptop" ]; then
+    # Añadir TLP y herramientas de brillo
+    UTILITY_PKGS+=("tlp" "brightnessctl" "libinput-tools")
+fi
 
 # =================================================================
 # 2. ACTUALIZACIÓN INTELIGENTE DE REPOSITORIOS
@@ -172,4 +177,4 @@ fi
 echo -e "${YELLOW}>> Limpiando caché de apt...${NC}"
 sudo apt autoremove -y && sudo apt autoclean
 
-echo -e "${GREEN}>> Instalación de paquetes v0.0.2-alpha completada.${NC}"
+echo -e "${GREEN}>> Instalación de paquetes completada.${NC}"

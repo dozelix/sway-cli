@@ -16,7 +16,7 @@ GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-echo -e "${GREEN}Iniciando eaSway - Entorno Post-Punk para Debian${NC}"
+echo -e "${GREEN}Iniciando eaSway para Debian${NC}"
 echo -e "Usuario detectado: ${USER:-$(whoami)}\n"
 
 # 2. Función de ejecución modular
