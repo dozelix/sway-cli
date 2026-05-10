@@ -15,7 +15,8 @@
 #   - SC2034: Exportación de GPU_VENDOR para uso externo.
 #   - SC2001: Uso de expansión de parámetros en lugar de sed.
 # v0.0.3_alpha:
-# sin cambios
+# implementacion de deteccion de bateria para laptop y export var
+# para añadir pkgs a install
 # =================================================================
 
 # --- Colores ---

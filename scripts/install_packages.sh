@@ -70,7 +70,7 @@ UTILITY_PKGS=(
     "kitty"
     "foot"
 )
-    "foot")
+
 if [ "$DEVICE_TYPE" = "laptop" ]; then
     # Añadir TLP y herramientas de brillo
     UTILITY_PKGS+=("tlp" "brightnessctl" "libinput-tools")
