@@ -21,4 +21,3 @@ Dockerfile
 # Archivos de base de datos
 *.db
 *.sqlite
-
