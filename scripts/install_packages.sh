@@ -5,7 +5,7 @@
 # Finalidad: Garantizar que el entorno base esté presente.
 # Cambios install v0.0.3-alpha:
 #implementacion de OS_ID y OS_VER para manejar casos específicos de paquetes
- #(ej. libegl1-mesa en Debian 12)
+#(ej. libegl1-mesa en Debian 12)
 # =================================================================
 
 #def colors
@@ -34,23 +34,42 @@ echo -e "${BLUE}   - Arquitectura: $ARCH${NC}"
 # 1. DEFINICIÓN DE PAQUETES POR PRIORIDAD
 # =================================================================
 
-# Extraer ID y VERSION_ID manualmente para evitar errores de 'source'
+# Identificar el sistema
 OS_ID=$(grep '^ID=' /etc/os-release | cut -d'=' -f2 | tr -d '"')
 OS_VER=$(grep '^VERSION_ID=' /etc/os-release | cut -d'=' -f2 | tr -d '"')
 
-# def base array
+# Definir paquetes base
 WAYLAND_CORE=("wayland-protocols" "libwayland-egl1" "mesa-utils" "xwayland")
 
-# logic condicional inyección
-if [ "$OS_ID" = "debian" ] && [ "$OS_VER" = "12" ]; then
-    # Caso Debian 12 (Bookworm)
-    WAYLAND_CORE+=("libegl1-mesa")
-else
-    # Caso Debian 13+, Ubuntu 24.04/26.04 y Docker (Trixie)
-    WAYLAND_CORE+=("libegl1" "libgl1-mesa-dri")
-fi
+get_extra_deps() {
+    # Combinamos ID y Versión en una sola variable para el match
+    case "$1-$2" in
+        "debian-12" | "ubuntu-22.04")
+            # Versiones que aún requieren o prefieren el sufijo -mesa
+            echo "libegl1-mesa libgl1-mesa-dri"
+            ;;
+        "debian-13" | "ubuntu-24.04" | "ubuntu-26.04")
+            # Versiones modernas con nombres de paquetes limpios
+            echo "libegl1 libgl1-mesa-dri"
+            ;;
+        *)
+            # Fallback para versiones futuras o genéricas
+            echo "libegl1 libgl1-mesa-dri"
+            ;;
+    esac
+}
 
-echo "[i] OS detectado: $OS_ID $OS_VER"
+# Inyección segura
+# Usamos ( ) para asegurar que se trate como una lista de elementos
+# Obtenemos la cadena de la función
+EXTRA_DEPS_STR=$(get_extra_deps "$OS_ID" "$OS_VER")
+
+# Dividimos la cadena en un arreglo temporal de forma segura
+read -r -a EXTRA_DEPS_ARRAY <<< "$EXTRA_DEPS_STR"
+
+# Agregamos los elementos al arreglo principal
+WAYLAND_CORE+=("${EXTRA_DEPS_ARRAY[@]}")
+echo "[i] Instalando para $OS_ID ($OS_VER)"
 echo "[i] Paquetes a instalar: ${WAYLAND_CORE[*]}"
 
 # def compCritic easway (compositor, barra, launcher y notificador)
