@@ -38,6 +38,7 @@ run_step() {
         echo -e "${RED}[!] ERROR: No se encontró el archivo $script_file en $SCRIPTS_DIR${NC}\n"
         exit 1
     fi
+    read -p "Presiona Enter para continuar..." -r
 }
 
 # 3. Ejecución de la secuencia de instalación
