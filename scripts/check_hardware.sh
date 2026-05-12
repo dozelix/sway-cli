@@ -1,32 +1,22 @@
 #!/bin/bash
 
 # =================================================================
-# Versión: 0.0.2
+# Versión: 0.0.4
 # eaSway - Módulo de Detección de Hardware
-# Finalidad: Verificar el entorno antes de la instalación para
-#evitar errores de configuración en VM y Docker.
-# Cambios v0.0.2:
-#   - Detección granular de GPU: Intel, AMD, NVIDIA (SW-08)
-#   - Advertencia accionable si se detecta NVIDIA (Wayland quirks)
-#   - Detección de entorno gráfico previo (X11 vs Wayland)
-#   - Verificación de dependencias mínimas del sistema
-#   - Salida estructurada compatible con el orquestador main.sh
-# Fixes ShellCheck: 
-#   - SC2034: Exportación de GPU_VENDOR para uso externo.
-#   - SC2001: Uso de expansión de parámetros en lugar de sed.
-# v0.0.3_alpha:
-# implementacion de deteccion de bateria para laptop y export var
-# para añadir pkgs a install
+# Finalidad: Verificar el entorno antes de la instalación.
+# Fix v0.0.4:
+#   - En VM/Docker: exportar GPU_VENDOR="Desconocido" y
+#     DEVICE_TYPE="desktop" antes de salir, para que los módulos
+#     siguientes tengan las variables disponibles.
+#   - VM ya no aborta el instalador — solo advierte.
 # =================================================================
 
-# --- Colores ---
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-# --- Contadores de advertencias ---
 WARNINGS=0
 
 echo -e "${BLUE}>> Iniciando verificación de hardware...${NC}"
@@ -36,14 +26,20 @@ echo -e "   ----------------------------------------"
 # 1. DETECCIÓN DE ENTORNO CONTENEDOR / VIRTUAL
 # =================================================================
 if [ -f /.dockerenv ]; then
-    echo -e "${YELLOW}[!] Entorno Docker detectado. Saltando pruebas físicas.${NC}"
+    echo -e "${YELLOW}[!] Entorno Docker detectado. Exportando valores por defecto.${NC}"
+    export GPU_VENDOR="Desconocido"
+    export DEVICE_TYPE="desktop"
     exit 0
 fi
 
+IS_VM=false
 if command -v systemd-detect-virt &>/dev/null; then
     VIRT_ENV=$(systemd-detect-virt 2>/dev/null)
     if [ "$VIRT_ENV" != "none" ]; then
         echo -e "${YELLOW}   [!] Entorno virtualizado detectado: $VIRT_ENV${NC}"
+        echo -e "${YELLOW}   [!] Sway requiere GPU con soporte DRM/KMS.${NC}"
+        echo -e "${YELLOW}   [!] En VM la instalación continuará pero Sway puede no arrancar.${NC}"
+        IS_VM=true
         WARNINGS=$((WARNINGS + 1))
     fi
 fi
@@ -59,19 +55,18 @@ if [ "$ARCH" != "x86_64" ]; then
     WARNINGS=$((WARNINGS + 1))
 fi
 
-# --- Detección de Tipo de Chasis (Laptop vs Desktop) ---
+# =================================================================
+# 3. DETECCIÓN DE TIPO DE CHASIS (Laptop vs Desktop)
+# =================================================================
 IS_LAPTOP=false
 
-# 1. Comprobar chasis mediante DMI
 if [ -f /sys/class/dmi/id/chassis_type ]; then
     CHASSIS_ID=$(cat /sys/class/dmi/id/chassis_type)
-    # Tipos 8, 9, 10, 11, 12 y 14 suelen ser portátiles
     case "$CHASSIS_ID" in
         8|9|10|11|12|14) IS_LAPTOP=true ;;
     esac
 fi
 
-# 2. Doble comprobación: ¿Existe una batería?
 if [ -d /sys/class/power_supply/BAT0 ] || [ -d /sys/class/power_supply/BAT1 ]; then
     IS_LAPTOP=true
 fi
@@ -85,9 +80,8 @@ else
 fi
 
 # =================================================================
-# 3. DETECCIÓN DE GPU (CRÍTICO PARA WAYLAND)
+# 4. DETECCIÓN DE GPU
 # =================================================================
-
 classify_gpu() {
     local raw="$1"
     if echo "$raw" | grep -qi "nvidia"; then
@@ -103,6 +97,7 @@ classify_gpu() {
 
 if ! command -v lspci &>/dev/null; then
     echo -e "${YELLOW}   [!] 'lspci' no encontrado. No se puede detectar la GPU.${NC}"
+    export GPU_VENDOR="Desconocido"
     WARNINGS=$((WARNINGS + 1))
 else
     GPU_RAW=$(lspci | grep -iE 'vga|display|3d controller' | head -n 1)
@@ -125,14 +120,16 @@ else
             ;;
         *)
             echo -e "${YELLOW}   [?] Fabricante de GPU no identificado.${NC}"
+            if [ "$IS_VM" = true ]; then
+                echo -e "${YELLOW}   [i] GPU virtual detectada (esperado en VM).${NC}"
+            fi
             WARNINGS=$((WARNINGS + 1))
             ;;
     esac
 fi
 
-
 # =================================================================
-# 4. DEPENDENCIAS MÍNIMAS
+# 5. DEPENDENCIAS MÍNIMAS
 # =================================================================
 REQUIRED_CMDS=("bash" "apt" "sudo" "cp" "mkdir" "find")
 for cmd in "${REQUIRED_CMDS[@]}"; do
@@ -142,7 +139,7 @@ for cmd in "${REQUIRED_CMDS[@]}"; do
 done
 
 # =================================================================
-# 5. RESUMEN FINAL
+# 6. RESUMEN FINAL
 # =================================================================
 echo -e "   ----------------------------------------"
 if [ "$WARNINGS" -gt 0 ]; then

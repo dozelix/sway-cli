@@ -3,24 +3,27 @@
 # =================================================================
 # eaSway - Módulo de Variables de Entorno Gráfico
 # Finalidad: Generar configuración de Wayland según GPU detectada.
+# Fix v0.0.4:
+#   - GPU_VENDOR="Desconocido" ya no causa exit 1.
+#     Escribe variables genéricas de Wayland y advierte al usuario.
 # =================================================================
 
 GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m'
 
 setup_video_env() {
     local ENV_FILE="/etc/profile.d/easway_env.sh"
 
-    # Guard: GPU_VENDOR debe estar definido por check_hardware.sh
+    # Si GPU_VENDOR no está definido, asignar valor por defecto
     if [ -z "$GPU_VENDOR" ]; then
-        echo -e "${RED}   [ERROR] GPU_VENDOR no definido. Ejecuta check_hardware.sh primero.${NC}"
-        exit 1
+        echo -e "${YELLOW}   [!] GPU_VENDOR no definido. Usando configuración genérica.${NC}"
+        GPU_VENDOR="Desconocido"
     fi
 
-    echo "[i] Configurando variables de entorno para $GPU_VENDOR..."
+    echo -e "   [i] Configurando variables de entorno para: $GPU_VENDOR..."
 
-    # Variables específicas por vendor
     local GPU_VARS
     case "$GPU_VENDOR" in
         "NVIDIA")
@@ -41,11 +44,12 @@ export WLR_NO_HARDWARE_CURSORS=0"
 export LIBVA_DRIVER_NAME=radeonsi"
             ;;
         *)
-            GPU_VARS="# GPU desconocida — sin optimizaciones específicas"
+            echo -e "${YELLOW}   [!] GPU no reconocida o entorno virtual. Aplicando config genérica.${NC}"
+            GPU_VARS="# GPU no reconocida — configuración genérica Wayland
+export WLR_NO_HARDWARE_CURSORS=1"
             ;;
     esac
 
-    # Una sola escritura al archivo
     sudo tee "$ENV_FILE" > /dev/null <<EOF
 # =================================================================
 # eaSway - Graphic Environment Variables

@@ -1,13 +1,16 @@
 #!/bin/bash
 
 # =================================================================
-# version: 0.1
+# version: 0.0.4
 # eaSway - Orquestador de Instalación
 # Finalidad: Punto de entrada genérico para el despliegue del entorno.
+# Fix v0.0.4:
+#   - REPO_ROOT corregido: install.sh vive en la raíz del repo,
+#     no en src/cli/, por lo que ya no hay que subir dos niveles.
 # =================================================================
 
 BASE_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-REPO_ROOT=$(cd "$BASE_DIR/../.." && pwd)
+REPO_ROOT="$BASE_DIR"
 SCRIPTS_DIR="$REPO_ROOT/scripts"
 
 GREEN='\033[0;32m'
