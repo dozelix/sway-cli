@@ -60,8 +60,6 @@ client.urgent           #ff0000   #000000   #ffffff   #ff0000    #ff0000
 # --- ATAJOS DE TECLADO (KEYBINDINGS) ---
 # =================================================================
 
-key_exit=Escape
-
 # Aplicaciones esenciales
 bindsym $mod+Return exec $term
 bindsym $mod+d exec $menu

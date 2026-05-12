@@ -37,7 +37,7 @@ echo -e "   ----------------------------------------"
 # =================================================================
 if [ -f /.dockerenv ]; then
     echo -e "${YELLOW}[!] Entorno Docker detectado. Saltando pruebas físicas.${NC}"
-    return 0
+    exit 0
 fi
 
 if command -v systemd-detect-virt &>/dev/null; then
