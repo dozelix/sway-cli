@@ -89,7 +89,8 @@ UTILITY_PKGS=(
     "pavucontrol"
     "network-manager-gnome"
     "thunar"
-    "foot")
+    "foot"
+)
 
 if [ "$DEVICE_TYPE" = "laptop" ]; then
     # Añadir TLP y herramientas de brillo

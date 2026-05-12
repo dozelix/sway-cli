@@ -15,7 +15,6 @@ Dockerfile
 
 # Archivos de configuración
 *.env 
-*.ini
 *.cfg
 
 # Archivos de base de datos
