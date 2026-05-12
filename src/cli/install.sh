@@ -10,7 +10,7 @@
 # =================================================================
 
 BASE_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-REPO_ROOT="$BASE_DIR"
+REPO_ROOT=$(cd "$BASE_DIR/../.." && pwd)
 SCRIPTS_DIR="$REPO_ROOT/scripts"
 
 GREEN='\033[0;32m'
