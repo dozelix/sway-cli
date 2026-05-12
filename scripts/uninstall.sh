@@ -41,7 +41,7 @@ fi
 # 2. Restauración de archivos de configuración
 echo " - Restaurando backups de .config..."
 CONFIG_DIR="$HOME/.config"
-APPS=("sway" "waybar" "mako" "kitty" "wofi")
+APPS=("sway" "waybar" "mako" "wofi")
 
 for APP in "${APPS[@]}"; do
     # SC2115: Protección ante variables vacías para evitar borrar '/'

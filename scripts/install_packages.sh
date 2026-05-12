@@ -89,7 +89,6 @@ UTILITY_PKGS=(
     "pavucontrol"
     "network-manager-gnome"
     "thunar"
-    "kitty"
     "foot")
 
 if [ "$DEVICE_TYPE" = "laptop" ]; then

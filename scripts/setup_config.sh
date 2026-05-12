@@ -10,8 +10,8 @@ APPS=(
     "sway"
     "waybar"
     "mako"
-    "kitty"
     "wofi"
+    "foot"
 )
 # def Colores
 GREEN='\033[0;32m'
