@@ -87,38 +87,48 @@ fi
 # =================================================================
 # 3. DETECCIÓN DE GPU (CRÍTICO PARA WAYLAND)
 # =================================================================
+
+classify_gpu() {
+    local raw="$1"
+    if echo "$raw" | grep -qi "nvidia"; then
+        echo "NVIDIA"
+    elif echo "$raw" | grep -qi "amd\|radeon\|advanced micro"; then
+        echo "AMD"
+    elif echo "$raw" | grep -qi "intel"; then
+        echo "Intel"
+    else
+        echo "Desconocido"
+    fi
+}
+
 if ! command -v lspci &>/dev/null; then
     echo -e "${YELLOW}   [!] 'lspci' no encontrado. No se puede detectar la GPU.${NC}"
     WARNINGS=$((WARNINGS + 1))
 else
-    # Extraemos el nombre completo de la GPU
     GPU_RAW=$(lspci | grep -iE 'vga|display|3d controller' | head -n 1)
-    
-    # Fix SC2001: Usamos expansión de parámetros de Bash en lugar de sed
-    # Esto elimina todo hasta el primer ": " incluido
     GPU_NAME="${GPU_RAW#*: }"
+    export GPU_VENDOR
+    GPU_VENDOR=$(classify_gpu "$GPU_RAW")
 
     echo -e "   - GPU detectada: ${GPU_NAME:-Desconocida}"
 
-    # Clasificación del fabricante
-    # Fix SC2034: Exportamos la variable para que sea visible por otros scripts
-    if echo "$GPU_RAW" | grep -qi "nvidia"; then
-        export GPU_VENDOR="NVIDIA"
-        echo -e "${YELLOW}   [!] GPU NVIDIA detectada. Requiere drivers propietarios.${NC}"
-        WARNINGS=$((WARNINGS + 1))
-    elif echo "$GPU_RAW" | grep -qi "amd\|radeon\|advanced micro"; then
-        export GPU_VENDOR="AMD"
-        echo -e "${GREEN}   [OK] GPU AMD detectada.${NC}"
-    elif echo "$GPU_RAW" | grep -qi "intel"; then
-        export GPU_VENDOR="Intel"
-        echo -e "${GREEN}   [OK] GPU Intel detectada.${NC}"
-    else
-        export GPU_VENDOR="Desconocido"
-        echo -e "${YELLOW}   [?] Fabricante de GPU no identificado.${NC}"
-        WARNINGS=$((WARNINGS + 1))
-    fi
+    case "$GPU_VENDOR" in
+        "NVIDIA")
+            echo -e "${YELLOW}   [!] GPU NVIDIA detectada. Requiere drivers propietarios.${NC}"
+            WARNINGS=$((WARNINGS + 1))
+            ;;
+        "AMD")
+            echo -e "${GREEN}   [OK] GPU AMD detectada.${NC}"
+            ;;
+        "Intel")
+            echo -e "${GREEN}   [OK] GPU Intel detectada.${NC}"
+            ;;
+        *)
+            echo -e "${YELLOW}   [?] Fabricante de GPU no identificado.${NC}"
+            WARNINGS=$((WARNINGS + 1))
+            ;;
+    esac
 fi
-
 
 
 # =================================================================

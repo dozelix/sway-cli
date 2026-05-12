@@ -98,6 +98,36 @@ if [ "$DEVICE_TYPE" = "laptop" ]; then
 fi
 
 # =================================================================
+# 1.5 PAQUETES CONDICIONALES POR GPU (SW-14)
+# =================================================================
+
+add_gpu_packages() {
+    local vendor="$1"
+    case "$vendor" in
+        "Intel")
+            UTILITY_PKGS+=("intel-media-va-driver")
+            echo -e "${BLUE}   [i] GPU Intel: agregando intel-media-va-driver.${NC}"
+            ;;
+        "AMD")
+            UTILITY_PKGS+=("mesa-va-drivers")
+            echo -e "${BLUE}   [i] GPU AMD: agregando mesa-va-drivers.${NC}"
+            ;;
+        "NVIDIA")
+            echo -e "${YELLOW}   [!] GPU NVIDIA: drivers propietarios requieren instalación manual.${NC}"
+            ;;
+        *)
+            echo -e "${YELLOW}   [?] GPU desconocida. Saltando paquetes específicos de GPU.${NC}"
+            ;;
+    esac
+}
+
+if [ -n "$GPU_VENDOR" ]; then
+    add_gpu_packages "$GPU_VENDOR"
+else
+    echo -e "${YELLOW}   [!] GPU_VENDOR no definido. Ejecuta check_hardware.sh primero.${NC}"
+fi
+
+# =================================================================
 # 2. ACTUALIZACIÓN INTELIGENTE DE REPOSITORIOS
 # =================================================================
 echo -e "${YELLOW}>> Verificando estado de repositorios...${NC}"
