@@ -1,24 +1,23 @@
 #!/bin/bash
-
 # =================================================================
-# Versión: 0.1
+# Versión: 0.4
 # eaSway - Módulo de Post-instalación y Permisos
 # Finalidad: Configurar el sistema de forma dinámica y genérica.
 # =================================================================
 
-#def colors
+# def colors
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-#output al usuario
+# def rutas
+REPO_ROOT=$(readlink -f "$(dirname "$0")/..")
+
 echo -e "${YELLOW}>> Iniciando ajustes finales de sistema...${NC}"
 
-# 1. conf Grupos (dinamic)
-# get user whoami
+# 1. Configuración de Grupos
 TARGET_USER="${USER:-$(whoami)}"
-
 echo -e "   - Configurando acceso a hardware para el usuario: '${TARGET_USER}'..."
 
 if id "$TARGET_USER" &>/dev/null; then
@@ -31,7 +30,7 @@ else
     echo -e "${RED}   [!] No se pudo determinar el usuario actual. Saltando configuración.${NC}"
 fi
 
-# 2. Permisos para el control de brillo (herramienta 'light')
+# 2. Permisos para el control de brillo
 if command -v light > /dev/null; then
     echo -e "   - Ajustando permisos para control de brillo..."
     sudo chmod +s "$(command -v light)"
@@ -40,7 +39,7 @@ else
     echo -e "${YELLOW}   [!] 'light' no instalado. Saltando ajuste de brillo.${NC}"
 fi
 
-# 3. Activación de Servicios Esenciales (Guard para systemd)
+# 3. Activación de Servicios Esenciales
 if pidof systemd > /dev/null 2>&1 || [ -d /run/systemd/system ]; then
     echo -e "   - systemd detectado. Activando servicios de red..."
     if sudo systemctl enable --now NetworkManager; then
@@ -51,6 +50,20 @@ if pidof systemd > /dev/null 2>&1 || [ -d /run/systemd/system ]; then
 else
     echo -e "${YELLOW}   [!] systemd NO disponible. Saltando activación de servicios.${NC}"
 fi
+
+# 4. Directorios de usuario
+echo -e "   - Creando directorios de usuario..."
+mkdir -p "$HOME/wallpapers"
+mkdir -p "$HOME/capturas"
+
+if [ -f "$REPO_ROOT/assets/wallpapers/easway_wallpaper.png" ]; then
+    cp "$REPO_ROOT/assets/wallpapers/easway_wallpaper.png" "$HOME/wallpapers/"
+    echo -e "${GREEN}   [OK] Wallpaper instalado.${NC}"
+else
+    echo -e "${YELLOW}   [!] Wallpaper no encontrado en assets/. Saltando.${NC}"
+fi
+
+echo -e "${GREEN}   [OK] Directorios creados.${NC}"
 
 echo -e "${GREEN}>> Ajustes de sistema completados con éxito.${NC}"
 

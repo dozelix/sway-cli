@@ -136,9 +136,8 @@ for_window [app_id="nm-connection-editor"] floating enable
 
 # =================================================================
 # --- EJECUCIÓN AUTOMÁTICA (AUTOSTART) ---
-# Orden importa: mako (notificaciones) debe iniciar antes que waybar
-# para capturar notificaciones tempranas del sistema.
 # =================================================================
+exec swaybg -m fill -i ~/wallpapers/easway_wallpaper.png
 exec mako
 exec waybar
 exec_always dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=sway
