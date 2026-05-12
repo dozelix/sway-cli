@@ -21,3 +21,6 @@ Dockerfile
 # Archivos de base de datos
 *.db
 *.sqlite
+
+#HERRAMIENTAS DEV
+test_eaSway.sh
