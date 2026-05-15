@@ -16,6 +16,27 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 # =================================================================
+# 0.5. VALIDACIÓN DE VARIABLES CRÍTICAS
+# =================================================================
+if [ -z "$DEVICE_TYPE" ]; then
+    echo -e "${YELLOW}[!] DEVICE_TYPE no definido. Usando 'desktop' por defecto.${NC}"
+    export DEVICE_TYPE="desktop"
+fi
+
+if [ -z "$GPU_VENDOR" ]; then
+    echo -e "${YELLOW}[!] GPU_VENDOR no definido. Usando 'Desconocido' por defecto.${NC}"
+    export GPU_VENDOR="Desconocido"
+fi
+
+if [ -z "$IN_VM" ]; then
+    export IN_VM=false
+fi
+
+echo -e "${BLUE}   - Dispositivo: $DEVICE_TYPE${NC}"
+echo -e "${BLUE}   - GPU: $GPU_VENDOR${NC}"
+echo -e "${BLUE}   - En VM: $IN_VM${NC}\n"
+
+# =================================================================
 # 0. DETECCIÓN DE ENTORNO
 # =================================================================
 IN_DOCKER=false
@@ -132,23 +153,29 @@ fi
 # =================================================================
 echo -e "${YELLOW}>> Verificando estado de repositorios...${NC}"
 
-# Si no existe el archivo de stamp, forzamos actualización
-if [ ! -f /var/lib/apt/periodic/update-success-stamp ]; then
-    last_update=0
+# Validar que apt está disponible
+if ! command -v apt &>/dev/null; then
+    echo -e "${YELLOW}   [!] 'apt' no disponible. Saltando actualización de repositorios.${NC}"
+    echo -e "${YELLOW}   [!] Esto es normal en entornos de testing/Docker con APT simulado.${NC}"
 else
-    last_update=$(stat -c %Y /var/lib/apt/periodic/update-success-stamp 2>/dev/null || echo 0)
-fi
-
-now=$(date +%s)
-
-if [ $((now - last_update)) -gt 86400 ]; then
-    echo -e "   [i] Repositorios con más de 24h. Actualizando..."
-    if ! sudo apt update; then
-        echo -e "${RED}   [ERROR] Falló apt update. Verifica tu conexión.${NC}"
-        exit 1
+    # Si no existe el archivo de stamp, forzamos actualización
+    if [ ! -f /var/lib/apt/periodic/update-success-stamp ]; then
+        last_update=0
+    else
+        last_update=$(stat -c %Y /var/lib/apt/periodic/update-success-stamp 2>/dev/null || echo 0)
     fi
-else
-    echo -e "${GREEN}   [OK] Repositorios actualizados recientemente.${NC}"
+
+    now=$(date +%s)
+
+    if [ $((now - last_update)) -gt 86400 ]; then
+        echo -e "   [i] Repositorios con más de 24h. Actualizando..."
+        if ! sudo apt update; then
+            echo -e "${RED}   [ERROR] Falló apt update. Verifica tu conexión.${NC}"
+            exit 1
+        fi
+    else
+        echo -e "${GREEN}   [OK] Repositorios actualizados recientemente.${NC}"
+    fi
 fi
 
 # =================================================================
@@ -157,30 +184,36 @@ fi
 
 # Primero: Protocolos y Drivers
 echo -e "${YELLOW}>> Instalando protocolos y drivers de Wayland...${NC}"
-if sudo apt install -y "${WAYLAND_CORE[@]}"; then
-    echo -e "${GREEN}   [OK] Librerías base instaladas.${NC}"
-else
-    echo -e "${RED}   [ERROR] Fallo crítico en librerías Wayland. Abortando.${NC}"
-    exit 1
-fi
 
-# Segundo: Compositor y Entorno
-echo -e "${YELLOW}>> Instalando componentes críticos de Sway...${NC}"
-if sudo apt install -y "${CRITICAL_PKGS[@]}"; then
-    echo -e "${GREEN}   [OK] Sway y componentes core instalados.${NC}"
+if ! command -v apt &>/dev/null; then
+    echo -e "${YELLOW}   [!] 'apt' no disponible. Saltando instalación de paquetes.${NC}"
+    echo -e "${YELLOW}   [!] Continuar con pasos posteriores...${NC}"
 else
-    echo -e "${RED}   [ERROR] Fallo crítico al instalar Sway. Abortando.${NC}"
-    exit 1
-fi
+    if sudo apt install -y "${WAYLAND_CORE[@]}"; then
+        echo -e "${GREEN}   [OK] Librerías base instaladas.${NC}"
+    else
+        echo -e "${RED}   [ERROR] Fallo crítico en librerías Wayland. Abortando.${NC}"
+        exit 1
+    fi
 
-# =================================================================
-# 4. INSTALACIÓN DE UTILIDADES
-# =================================================================
-echo -e "${YELLOW}>> Instalando utilidades y extras...${NC}"
-if sudo apt install -y "${UTILITY_PKGS[@]}"; then
-    echo -e "${GREEN}   [OK] Utilidades instaladas correctamente.${NC}"
-else
-    echo -e "${YELLOW}   [!] Algunos paquetes opcionales fallaron. Revisa los logs.${NC}"
+    # Segundo: Compositor y Entorno
+    echo -e "${YELLOW}>> Instalando componentes críticos de Sway...${NC}"
+    if sudo apt install -y "${CRITICAL_PKGS[@]}"; then
+        echo -e "${GREEN}   [OK] Sway y componentes core instalados.${NC}"
+    else
+        echo -e "${RED}   [ERROR] Fallo crítico al instalar Sway. Abortando.${NC}"
+        exit 1
+    fi
+
+    # =================================================================
+    # 4. INSTALACIÓN DE UTILIDADES
+    # =================================================================
+    echo -e "${YELLOW}>> Instalando utilidades y extras...${NC}"
+    if sudo apt install -y "${UTILITY_PKGS[@]}"; then
+        echo -e "${GREEN}   [OK] Utilidades instaladas correctamente.${NC}"
+    else
+        echo -e "${YELLOW}   [!] Algunos paquetes opcionales fallaron. Revisa los logs.${NC}"
+    fi
 fi
 
 # =================================================================
@@ -204,10 +237,15 @@ fi
 # =================================================================
 # 6. PERMISOS PARA CONTROL DE BRILLO
 # =================================================================
-if [ "$IN_DOCKER" = false ] && command -v light > /dev/null; then
+if [ "$IN_DOCKER" = false ] && [ "$IN_VM" = false ] && command -v light > /dev/null; then
     echo -e "   [i] Configurando SUID para 'light'..."
-    sudo chmod +s "$(command -v light)"
-    echo -e "${GREEN}   [OK] Permisos de brillo configurados.${NC}"
+    if sudo chmod +s "$(command -v light)" 2>/dev/null; then
+        echo -e "${GREEN}   [OK] Permisos de brillo configurados.${NC}"
+    else
+        echo -e "${YELLOW}   [!] No se pudo configurar SUID para 'light' (esperado en algunos entornos).${NC}"
+    fi
+elif [ "$IN_DOCKER" = true ] || [ "$IN_VM" = true ]; then
+    echo -e "${YELLOW}   [i] Docker/VM detectado. Saltando SUID para 'light'.${NC}"
 fi
 
 # =================================================================
@@ -217,9 +255,13 @@ echo -e "${YELLOW}>> Verificando gestor de servicios...${NC}"
 
 if pidof systemd > /dev/null 2>&1 || [ -d /run/systemd/system ]; then
     echo -e "   [i] systemd detectado. Activando NetworkManager..."
-    sudo systemctl enable --now NetworkManager 2>/dev/null || echo -e "${RED}   [!] No se pudo activar NetworkManager.${NC}"
+    if sudo systemctl enable --now NetworkManager 2>/dev/null; then
+        echo -e "${GREEN}   [OK] NetworkManager activado.${NC}"
+    else
+        echo -e "${YELLOW}   [!] No se pudo activar NetworkManager (esperado en algunas VMs).${NC}"
+    fi
 else
-    echo -e "${YELLOW}   [!] systemd no disponible. Saltando servicios.${NC}"
+    echo -e "${YELLOW}   [!] systemd NO disponible. Saltando activación de servicios.${NC}"
 fi
 
 # =================================================================

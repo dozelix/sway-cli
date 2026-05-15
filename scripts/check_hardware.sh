@@ -33,6 +33,9 @@ if [ -f /.dockerenv ]; then
 fi
 
 IS_VM=false
+export IN_VM=false
+SKIP_HARDWARE_DETECTION=false
+
 if command -v systemd-detect-virt &>/dev/null; then
     VIRT_ENV=$(systemd-detect-virt 2>/dev/null)
     if [ "$VIRT_ENV" != "none" ]; then
@@ -40,8 +43,24 @@ if command -v systemd-detect-virt &>/dev/null; then
         echo -e "${YELLOW}   [!] Sway requiere GPU con soporte DRM/KMS.${NC}"
         echo -e "${YELLOW}   [!] En VM la instalación continuará pero Sway puede no arrancar.${NC}"
         IS_VM=true
+        export IN_VM=true
+        export DEVICE_TYPE="desktop"
+        export GPU_VENDOR="Desconocido"
         WARNINGS=$((WARNINGS + 1))
+        SKIP_HARDWARE_DETECTION=true
+        echo -e "   ----------------------------------------"
+        echo -e "${GREEN}>> VM detectada. Exportando configuración por defecto.${NC}"
     fi
+fi
+
+# Si se detectó VM, saltar el resto del hardware check
+if [ "$SKIP_HARDWARE_DETECTION" = true ]; then
+    echo -e "   ----------------------------------------"
+    echo -e "   - Tipo de dispositivo: $DEVICE_TYPE"
+    echo -e "   - Fabricante de GPU: $GPU_VENDOR"
+    echo -e "   - Entorno VM: $IN_VM"
+    echo -e "${GREEN}>> Configuración de VM completada.${NC}"
+    exit 0
 fi
 
 # =================================================================
@@ -139,9 +158,28 @@ for cmd in "${REQUIRED_CMDS[@]}"; do
 done
 
 # =================================================================
-# 6. RESUMEN FINAL
+# 6. VALIDACIÓN FINAL DE VARIABLES
+# =================================================================
+# Asegurar que todas las variables están definidas (fallback)
+if [ -z "$DEVICE_TYPE" ]; then
+    export DEVICE_TYPE="desktop"
+fi
+
+if [ -z "$GPU_VENDOR" ]; then
+    export GPU_VENDOR="Desconocido"
+fi
+
+if [ -z "$IN_VM" ]; then
+    export IN_VM=false
+fi
+
+# =================================================================
+# 7. RESUMEN FINAL
 # =================================================================
 echo -e "   ----------------------------------------"
+echo -e "   - Tipo de dispositivo: $DEVICE_TYPE"
+echo -e "   - Fabricante de GPU: $GPU_VENDOR"
+echo -e "   - Entorno VM: $IN_VM"
 if [ "$WARNINGS" -gt 0 ]; then
     echo -e "${YELLOW}>> Verificación completada con $WARNINGS advertencia(s).${NC}"
 else

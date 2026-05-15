@@ -21,6 +21,16 @@ echo -e "${GREEN}Iniciando eaSway para Debian${NC}"
 echo -e "Usuario detectado: ${USER:-$(whoami)}\n"
 
 # =================================================================
+# DETECCIÓN INICIAL DE ENTORNO
+# =================================================================
+if [ -f /.dockerenv ]; then
+    echo -e "${YELLOW}>> Docker detectado. Usando configuración optimizada.${NC}\n"
+    export IN_DOCKER=true
+else
+    export IN_DOCKER=false
+fi
+
+# =================================================================
 # Ejecución de pasos que no exportan variables al orquestador
 # =================================================================
 run_step() {
@@ -74,6 +84,13 @@ run_step_source() {
 
 # Paso 1: source — necesita exportar GPU_VENDOR y DEVICE_TYPE
 run_step_source "check_hardware.sh" "Detección de Hardware"
+
+# Mostrar variables detectadas
+echo -e "${BLUE}>> Variables de Entorno Detectadas:${NC}"
+echo -e "   - IN_DOCKER: ${IN_DOCKER:-false}"
+echo -e "   - IN_VM: ${IN_VM:-false}"
+echo -e "   - DEVICE_TYPE: ${DEVICE_TYPE:-undefined}"
+echo -e "   - GPU_VENDOR: ${GPU_VENDOR:-undefined}\n"
 
 # Pasos 2-4: bash normal
 run_step "install_packages.sh"  "Instalación de Paquetes"

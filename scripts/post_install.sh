@@ -16,38 +16,52 @@ NC='\033[0m'
 
 REPO_ROOT=$(readlink -f "$(dirname "$0")/..")
 
+# Importar IN_VM si está disponible
+export IN_VM=${IN_VM:-false}
+export IN_DOCKER=${IN_DOCKER:-false}
+
 echo -e "${YELLOW}>> Iniciando ajustes finales de sistema...${NC}"
 
 # 1. Configuración de Grupos
-TARGET_USER="${SUDO_USER:-${USER:-$(whoami)}}"
+TARGET_USER="${SUDO_USER:-${USER:-dozelix}}"
+
+# Validar que el usuario existe
+if ! id "$TARGET_USER" &>/dev/null; then
+    echo -e "${YELLOW}[!] Usuario '$TARGET_USER' no encontrado. Usando 'dozelix'.${NC}"
+    TARGET_USER="dozelix"
+fi
+
 echo -e "   - Configurando acceso a hardware para: '${TARGET_USER}'..."
 
 if id "$TARGET_USER" &>/dev/null; then
-    if sudo usermod -aG video,input "$TARGET_USER"; then
+    if sudo usermod -aG video,input "$TARGET_USER" 2>/dev/null; then
         echo -e "${GREEN}   [OK] Usuario '${TARGET_USER}' añadido a grupos video e input.${NC}"
     else
-        echo -e "${RED}   [ERROR] Falló usermod para '${TARGET_USER}'.${NC}"
+        echo -e "${YELLOW}   [!] No se pudo agregar a grupos video/input (podría requerir permisos).${NC}"
     fi
 else
-    echo -e "${RED}   [!] No se pudo determinar el usuario actual. Saltando configuración.${NC}"
+    echo -e "${RED}   [!] No se pudo determinar usuario válido. Saltando configuración.${NC}"
 fi
 
 # 2. Permisos para el control de brillo
-if command -v light > /dev/null; then
+if [ "$IN_DOCKER" = false ] && [ "$IN_VM" = false ] && command -v light > /dev/null; then
     echo -e "   - Ajustando permisos para control de brillo..."
-    sudo chmod +s "$(command -v light)"
-    echo -e "${GREEN}   [OK] Permisos de brillo configurados.${NC}"
-else
-    echo -e "${YELLOW}   [!] 'light' no instalado. Saltando ajuste de brillo.${NC}"
+    if sudo chmod +s "$(command -v light)" 2>/dev/null; then
+        echo -e "${GREEN}   [OK] Permisos de brillo configurados.${NC}"
+    else
+        echo -e "${YELLOW}   [!] No se pudo configurar SUID para 'light' (esperado en algunos entornos).${NC}"
+    fi
+elif [ "$IN_DOCKER" = true ] || [ "$IN_VM" = true ]; then
+    echo -e "${YELLOW}   [i] Docker/VM detectado. Saltando SUID para 'light'.${NC}"
 fi
 
 # 3. Activación de Servicios Esenciales
 if pidof systemd > /dev/null 2>&1 || [ -d /run/systemd/system ]; then
     echo -e "   - systemd detectado. Activando servicios de red..."
-    if sudo systemctl enable --now NetworkManager; then
+    if sudo systemctl enable --now NetworkManager 2>/dev/null; then
         echo -e "${GREEN}   [OK] NetworkManager activado.${NC}"
     else
-        echo -e "${RED}   [ERROR] Falló la activación de NetworkManager.${NC}"
+        echo -e "${YELLOW}   [!] No se pudo activar NetworkManager (esperado en algunas VMs).${NC}"
     fi
 else
     echo -e "${YELLOW}   [!] systemd NO disponible. Saltando activación de servicios.${NC}"
