@@ -1,0 +1,4 @@
+#!/bin/bash
+# Simular lspci sin GPU VGA
+echo "00:00.0 Host bridge: Intel Corporation 440FX - 82441FX PMC [Natoma] (rev 02)"
+exit 0
