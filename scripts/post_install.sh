@@ -18,7 +18,6 @@ REPO_ROOT=$(readlink -f "$(dirname "$0")/..")
 
 # Importar IN_VM si está disponible
 export IN_VM=${IN_VM:-false}
-export IN_DOCKER=${IN_DOCKER:-false}
 
 echo -e "${YELLOW}>> Iniciando ajustes finales de sistema...${NC}"
 
@@ -44,15 +43,15 @@ else
 fi
 
 # 2. Permisos para el control de brillo
-if [ "$IN_DOCKER" = false ] && [ "$IN_VM" = false ] && command -v light > /dev/null; then
+if [ "$IN_VM" = false ] && command -v light > /dev/null; then
     echo -e "   - Ajustando permisos para control de brillo..."
     if sudo chmod +s "$(command -v light)" 2>/dev/null; then
         echo -e "${GREEN}   [OK] Permisos de brillo configurados.${NC}"
     else
         echo -e "${YELLOW}   [!] No se pudo configurar SUID para 'light' (esperado en algunos entornos).${NC}"
     fi
-elif [ "$IN_DOCKER" = true ] || [ "$IN_VM" = true ]; then
-    echo -e "${YELLOW}   [i] Docker/VM detectado. Saltando SUID para 'light'.${NC}"
+elif [ "$IN_VM" = true ]; then
+    echo -e "${YELLOW}   [i] Virtualización detectada. Saltando SUID para 'light'.${NC}"
 fi
 
 # 3. Activación de Servicios Esenciales

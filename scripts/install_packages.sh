@@ -39,16 +39,8 @@ echo -e "${BLUE}   - En VM: $IN_VM${NC}\n"
 # =================================================================
 # 0. DETECCIÓN DE ENTORNO
 # =================================================================
-IN_DOCKER=false
-if [ -f /.dockerenv ]; then
-    IN_DOCKER=true
-    echo -e "${YELLOW}[!] Entorno Docker detectado. Algunos pasos serán omitidos.${NC}"
-fi
-# Validación de arquitectura
-ARCH=$(uname -m)
-if [ "$ARCH" != "x86_64" ]; then
-    echo -e "${YELLOW}[!] Arquitectura detectada: $ARCH. eaSway está optimizado para x86_64.${NC}"
-fi
+IN_VM=${IN_VM:-false}
+
 echo -e "${BLUE}   - Arquitectura: $ARCH${NC}"
 
 # =================================================================
@@ -237,15 +229,15 @@ fi
 # =================================================================
 # 6. PERMISOS PARA CONTROL DE BRILLO
 # =================================================================
-if [ "$IN_DOCKER" = false ] && [ "$IN_VM" = false ] && command -v light > /dev/null; then
+if [ "$IN_VM" = false ] && command -v light > /dev/null; then
     echo -e "   [i] Configurando SUID para 'light'..."
     if sudo chmod +s "$(command -v light)" 2>/dev/null; then
         echo -e "${GREEN}   [OK] Permisos de brillo configurados.${NC}"
     else
         echo -e "${YELLOW}   [!] No se pudo configurar SUID para 'light' (esperado en algunos entornos).${NC}"
     fi
-elif [ "$IN_DOCKER" = true ] || [ "$IN_VM" = true ]; then
-    echo -e "${YELLOW}   [i] Docker/VM detectado. Saltando SUID para 'light'.${NC}"
+elif [ "$IN_VM" = true ]; then
+    echo -e "${YELLOW}   [i] Virtualización detectada. Saltando SUID para 'light'.${NC}"
 fi
 
 # =================================================================

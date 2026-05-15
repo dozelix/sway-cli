@@ -23,25 +23,19 @@ echo -e "${BLUE}>> Iniciando verificación de hardware...${NC}"
 echo -e "   ----------------------------------------"
 
 # =================================================================
-# 1. DETECCIÓN DE ENTORNO CONTENEDOR / VIRTUAL
+# 1. DETECCIÓN DE VIRTUALIZACIÓN (Docker, KVM, VirtualBox, etc.)
 # =================================================================
-if [ -f /.dockerenv ]; then
-    echo -e "${YELLOW}[!] Entorno Docker detectado. Exportando valores por defecto.${NC}"
-    export GPU_VENDOR="Desconocido"
-    export DEVICE_TYPE="desktop"
-    exit 0
-fi
-
 IS_VM=false
 export IN_VM=false
 SKIP_HARDWARE_DETECTION=false
 
+# Detectar cualquier tipo de virtualización
 if command -v systemd-detect-virt &>/dev/null; then
     VIRT_ENV=$(systemd-detect-virt 2>/dev/null)
     if [ "$VIRT_ENV" != "none" ]; then
         echo -e "${YELLOW}   [!] Entorno virtualizado detectado: $VIRT_ENV${NC}"
         echo -e "${YELLOW}   [!] Sway requiere GPU con soporte DRM/KMS.${NC}"
-        echo -e "${YELLOW}   [!] En VM la instalación continuará pero Sway puede no arrancar.${NC}"
+        echo -e "${YELLOW}   [!] En virtualización, la instalación continuará pero Sway puede no arrancar.${NC}"
         IS_VM=true
         export IN_VM=true
         export DEVICE_TYPE="desktop"
@@ -49,17 +43,17 @@ if command -v systemd-detect-virt &>/dev/null; then
         WARNINGS=$((WARNINGS + 1))
         SKIP_HARDWARE_DETECTION=true
         echo -e "   ----------------------------------------"
-        echo -e "${GREEN}>> VM detectada. Exportando configuración por defecto.${NC}"
+        echo -e "${GREEN}>> Virtualización detectada. Exportando configuración por defecto.${NC}"
     fi
 fi
 
-# Si se detectó VM, saltar el resto del hardware check
+# Si se detectó virtualización, saltar el resto del hardware check
 if [ "$SKIP_HARDWARE_DETECTION" = true ]; then
     echo -e "   ----------------------------------------"
     echo -e "   - Tipo de dispositivo: $DEVICE_TYPE"
     echo -e "   - Fabricante de GPU: $GPU_VENDOR"
-    echo -e "   - Entorno VM: $IN_VM"
-    echo -e "${GREEN}>> Configuración de VM completada.${NC}"
+    echo -e "   - En virtualización: $IN_VM"
+    echo -e "${GREEN}>> Configuración de virtualización completada.${NC}"
     exit 0
 fi
 

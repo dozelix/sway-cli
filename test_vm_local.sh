@@ -130,10 +130,10 @@ test_step "${SCRIPT_DIR}/scripts/setup_config.sh" "Setup de Configuraciones" || 
 echo -e "\n${BLUE}>> Validando resultados...${NC}\n"
 
 # Verificar que las variables estén definidas
-if grep -q "Entorno VM.*true" "$LOG_FILE"; then
-    echo -e "${GREEN}   [OK] IN_VM correctamente detectado${NC}"
+if grep -q "Entorno virtualizado detectado" "$LOG_FILE"; then
+    echo -e "${GREEN}   [OK] Virtualización correctamente detectada${NC}"
 else
-    echo -e "${YELLOW}   [!] IN_VM no se detectó como esperado${NC}"
+    echo -e "${YELLOW}   [!] Virtualización no se detectó como esperado${NC}"
 fi
 
 if grep -q "GPU_VENDOR.*Desconocido" "$LOG_FILE"; then
