@@ -35,7 +35,7 @@ if command -v systemd-detect-virt &>/dev/null; then
     if [ "$VIRT_ENV" != "none" ]; then
         echo -e "${YELLOW}   [!] Entorno virtualizado detectado: $VIRT_ENV${NC}"
         echo -e "${YELLOW}   [!] Sway requiere GPU con soporte DRM/KMS.${NC}"
-        echo -e "${YELLOW}   [!] En virtualización, la instalación continuará pero Sway puede no arrancar.${NC}"
+        echo "[!] En virtualización, Sway requiere aceleración 3D habilitada en la VM."
         IS_VM=true
         export IN_VM=true
         export DEVICE_TYPE="desktop"

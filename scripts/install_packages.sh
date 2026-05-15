@@ -80,7 +80,9 @@ CRITICAL_PKGS=(
     "sway"
     "waybar"
     "wofi"
-    "mako-notifier")
+    "mako-notifier"
+    "seatd"
+    )
 
 UTILITY_PKGS=(
     "swaybg"

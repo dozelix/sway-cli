@@ -45,8 +45,10 @@ export LIBVA_DRIVER_NAME=radeonsi"
             ;;
         *)
             echo -e "${YELLOW}   [!] GPU no reconocida o entorno virtual. Aplicando config genérica.${NC}"
-            GPU_VARS="# GPU no reconocida — configuración genérica Wayland
-export WLR_NO_HARDWARE_CURSORS=1"
+            GPU_VARS="# GPU no reconocida / VM — renderer software habilitado
+        export WLR_NO_HARDWARE_CURSORS=1
+        export WLR_RENDERER=auto
+        export WLR_RENDERER_ALLOW_SOFTWARE=1"
             ;;
     esac
 

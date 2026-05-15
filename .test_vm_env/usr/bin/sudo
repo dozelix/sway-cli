@@ -1,4 +1,2 @@
 #!/bin/bash
-# Simulación de sudo sin contraseña
-# Solo ejecuta el comando, sin pedir contraseña
 "$@"

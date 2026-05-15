@@ -22,21 +22,21 @@ export IN_VM=${IN_VM:-false}
 echo -e "${YELLOW}>> Iniciando ajustes finales de sistema...${NC}"
 
 # 1. Configuración de Grupos
-TARGET_USER="${SUDO_USER:-${USER:-dozelix}}"
+TARGET_USER="${SUDO_USER:-${USER:-$(whoami)}}"
 
 # Validar que el usuario existe
 if ! id "$TARGET_USER" &>/dev/null; then
-    echo -e "${YELLOW}[!] Usuario '$TARGET_USER' no encontrado. Usando 'dozelix'.${NC}"
-    TARGET_USER="dozelix"
+    echo -e "${YELLOW}[!] Usuario '$TARGET_USER' no encontrado. Usando 'user'.${NC}"
+    TARGET_USER="user"
 fi
 
 echo -e "   - Configurando acceso a hardware para: '${TARGET_USER}'..."
 
 if id "$TARGET_USER" &>/dev/null; then
-    if sudo usermod -aG video,input "$TARGET_USER" 2>/dev/null; then
+    if sudo usermod -aG video,input,seat "$TARGET_USER" 2>/dev/null; then
         echo -e "${GREEN}   [OK] Usuario '${TARGET_USER}' añadido a grupos video e input.${NC}"
     else
-        echo -e "${YELLOW}   [!] No se pudo agregar a grupos video/input (podría requerir permisos).${NC}"
+        echo -e "${YELLOW}   [!] No se pudo agregar a grupos video/input/seat (podría requerir permisos).${NC}"
     fi
 else
     echo -e "${RED}   [!] No se pudo determinar usuario válido. Saltando configuración.${NC}"
@@ -57,11 +57,17 @@ fi
 # 3. Activación de Servicios Esenciales
 if pidof systemd > /dev/null 2>&1 || [ -d /run/systemd/system ]; then
     echo -e "   - systemd detectado. Activando servicios de red..."
+    
+    # 1. Intentar activar NetworkManager
     if sudo systemctl enable --now NetworkManager 2>/dev/null; then
         echo -e "${GREEN}   [OK] NetworkManager activado.${NC}"
     else
         echo -e "${YELLOW}   [!] No se pudo activar NetworkManager (esperado en algunas VMs).${NC}"
     fi
+
+    # 2. Intentar activar seatd (ya sabemos que systemd existe, no hace falta repetir el if)
+    sudo systemctl enable --now seatd 2>/dev/null || true
+
 else
     echo -e "${YELLOW}   [!] systemd NO disponible. Saltando activación de servicios.${NC}"
 fi
