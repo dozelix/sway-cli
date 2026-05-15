@@ -1,14 +1,11 @@
 # =================================================================
 # eaSway - Configuración de Sway WM
-# Versión: 0.0.1 — 08-05-2026
+# Versión: 0.0.4-alpha
 # Estética: Neobrutalista / Post-Punk
 # Desarrollador: dozelix
-# Cambios v0.0.2:
-#   - SW-06: Guard de XDG_RUNTIME_DIR con creación automática
-#   - Workspaces ampliados a 6 (con movimiento incluido)
-#   - Orden de autostart garantizado (mako antes que waybar)
-#   - Sección de flotantes añadida
-#   - Captura de pantalla con grim+slurp integrada
+# Fix BUG#6:
+#   - Extensión de wallpaper corregida de .png a .webp para
+#     coincidir con el archivo que instala post_install.sh
 # =================================================================
 
 # =================================================================
@@ -135,7 +132,9 @@ for_window [app_id="nm-connection-editor"] floating enable
 # =================================================================
 # --- EJECUCIÓN AUTOMÁTICA (AUTOSTART) ---
 # =================================================================
-exec swaybg -m fill -i ~/wallpapers/easway_wallpaper.png
+# BUG#6 FIX: corregida extensión de .png a .webp
+# post_install.sh prioriza easway_wallpaper.webp al instalarlo
+exec swaybg -m fill -i ~/wallpapers/easway_wallpaper.webp
 exec mako
 exec waybar
 exec_always dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=sway

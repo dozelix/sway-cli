@@ -4,6 +4,12 @@
 # eaSway - Test Local VM Simulation
 # Finalidad: Simular entorno VM sin necesitar VM real
 # Permite testear la instalación en ambiente controlado local
+# Fix:
+#   - BUG#1: check_hardware.sh ahora se ejecuta con source para que
+#     GPU_VENDOR, DEVICE_TYPE e IN_VM se propaguen a los pasos
+#     siguientes (install_packages, gpu_environment).
+#   - BUG#5: Corregidos los greps de validación final para que
+#     coincidan con el output real de check_hardware.sh.
 # =================================================================
 
 set -e
@@ -30,7 +36,6 @@ mkdir -p "$TEST_ENV_DIR"
 # =================================================================
 echo -e "${BLUE}>> Creando estructura simulada de VM...${NC}"
 
-# Simulamos detección de VM con systemd-detect-virt
 mkdir -p "$TEST_ENV_DIR/usr/bin"
 cat > "$TEST_ENV_DIR/usr/bin/systemd-detect-virt" << 'EOF'
 #!/bin/bash
@@ -39,14 +44,10 @@ exit 0
 EOF
 chmod +x "$TEST_ENV_DIR/usr/bin/systemd-detect-virt"
 
-# Crear fake /sys para evitar que se lean valores reales
 mkdir -p "$TEST_ENV_DIR/sys/class/dmi/id"
 mkdir -p "$TEST_ENV_DIR/sys/class/power_supply"
-
-# Crear fake /run/systemd para simular systemd disponible
 mkdir -p "$TEST_ENV_DIR/run/systemd/system"
 
-# Crear archivo /etc/os-release simulado
 mkdir -p "$TEST_ENV_DIR/etc"
 cat > "$TEST_ENV_DIR/etc/os-release" << 'EOF'
 NAME="Debian GNU/Linux"
@@ -56,20 +57,15 @@ ID_LIKE="debian"
 PRETTY_NAME="Debian GNU/Linux 12 (bookworm)"
 EOF
 
-# Crear fake lspci que no encuentra GPU en VM
 cat > "$TEST_ENV_DIR/usr/bin/lspci" << 'EOF'
 #!/bin/bash
-# Simular lspci sin GPU VGA
 echo "00:00.0 Host bridge: Intel Corporation 440FX - 82441FX PMC [Natoma] (rev 02)"
 exit 0
 EOF
 chmod +x "$TEST_ENV_DIR/usr/bin/lspci"
 
-# Crear fake sudo que NO pide contraseña
 cat > "$TEST_ENV_DIR/usr/bin/sudo" << 'EOF'
 #!/bin/bash
-# Simulación de sudo sin contraseña
-# Solo ejecuta el comando, sin pedir contraseña
 "$@"
 EOF
 chmod +x "$TEST_ENV_DIR/usr/bin/sudo"
@@ -77,14 +73,11 @@ chmod +x "$TEST_ENV_DIR/usr/bin/sudo"
 echo -e "${GREEN}   [OK] Estructura simulada creada.${NC}\n"
 
 # =================================================================
-# CREAR WRAPPER PARA EJECUTAR EN AMBIENTE AISLADO
+# PREPARAR ENVIRONMENT
 # =================================================================
 echo -e "${BLUE}>> Preparando environment de prueba...${NC}"
 
-# Crear PATH que prefiera nuestros fakes
 FAKE_PATH="$TEST_ENV_DIR/usr/bin:/usr/local/bin:/usr/bin:/bin"
-
-# Variables de entorno para la prueba
 export PATH="$FAKE_PATH:$PATH"
 export SCRIPT_DIR
 export TEST_LOG="$LOG_FILE"
@@ -92,12 +85,33 @@ export TEST_LOG="$LOG_FILE"
 echo -e "${GREEN}   [OK] Environment preparado.${NC}\n"
 
 # =================================================================
-# EJECUTAR SCRIPTS EN ORDEN
+# FUNCIONES DE EJECUCIÓN
 # =================================================================
-echo -e "${BLUE}>> Ejecutando pruebas simuladas...${NC}"
-echo "================================================" >> "$LOG_FILE"
-echo "eaSway VM Local Test - $(date)" >> "$LOG_FILE"
-echo "================================================" >> "$LOG_FILE"
+
+# BUG#1 FIX: test_step_source ejecuta el script con "source" en lugar de "bash".
+# Esto hace que las variables exportadas (GPU_VENDOR, DEVICE_TYPE, IN_VM)
+# persistan en el entorno de este proceso y lleguen a los pasos siguientes.
+test_step_source() {
+    local script="$1"
+    local desc="$2"
+
+    echo -e "${YELLOW}[TEST] $desc${NC}"
+    echo "--- $desc ---" >> "$LOG_FILE"
+
+    # Capturamos stdout al log Y a pantalla con tee, pero source necesita
+    # ejecutarse en el proceso actual para exportar variables.
+    # Solución: ejecutar y luego duplicar output al log.
+    if source "$script" 2>&1 | tee -a "$LOG_FILE"; then
+        echo -e "${GREEN}   ✔ $desc exitoso${NC}"
+        echo "SUCCESS" >> "$LOG_FILE"
+    else
+        local exit_code=${PIPESTATUS[0]}
+        echo -e "${RED}   ✗ $desc falló (exit code: $exit_code)${NC}"
+        echo "FAILED (exit code: $exit_code)" >> "$LOG_FILE"
+        return "$exit_code"
+    fi
+    echo "" >> "$LOG_FILE"
+}
 
 test_step() {
     local script="$1"
@@ -118,37 +132,50 @@ test_step() {
     echo "" >> "$LOG_FILE"
 }
 
-# Ejecutar scripts
-test_step "${SCRIPT_DIR}/scripts/check_hardware.sh" "Detección de Hardware"
+# =================================================================
+# EJECUTAR SCRIPTS EN ORDEN
+# =================================================================
+echo -e "${BLUE}>> Ejecutando pruebas simuladas...${NC}"
+echo "================================================" >> "$LOG_FILE"
+echo "eaSway VM Local Test - $(date)" >> "$LOG_FILE"
+echo "================================================" >> "$LOG_FILE"
+
+# BUG#1 FIX: check_hardware usa source para exportar variables al entorno actual
+test_step_source "${SCRIPT_DIR}/scripts/check_hardware.sh" "Detección de Hardware"
+
+# Verificar que las variables llegaron correctamente antes de continuar
+echo -e "${BLUE}   Variables detectadas: GPU=${GPU_VENDOR:-VACÍO} | DEVICE=${DEVICE_TYPE:-VACÍO} | VM=${IN_VM:-VACÍO}${NC}"
+
 test_step "${SCRIPT_DIR}/scripts/install_packages.sh" "Instalación de Paquetes" || true
 test_step "${SCRIPT_DIR}/scripts/gpu_environment.sh" "Configuración GPU"
 test_step "${SCRIPT_DIR}/scripts/setup_config.sh" "Setup de Configuraciones" || true
 
 # =================================================================
 # VALIDACIÓN FINAL
+# BUG#5 FIX: los greps ahora coinciden con el output real de check_hardware.sh
 # =================================================================
 echo -e "\n${BLUE}>> Validando resultados...${NC}\n"
 
-# Verificar que las variables estén definidas
 if grep -q "Entorno virtualizado detectado" "$LOG_FILE"; then
     echo -e "${GREEN}   [OK] Virtualización correctamente detectada${NC}"
 else
     echo -e "${YELLOW}   [!] Virtualización no se detectó como esperado${NC}"
 fi
 
-if grep -q "GPU_VENDOR.*Desconocido" "$LOG_FILE"; then
+# BUG#5 FIX: era "GPU_VENDOR.*Desconocido" — el log imprime "Fabricante de GPU: Desconocido"
+if grep -q "Fabricante de GPU: Desconocido" "$LOG_FILE"; then
     echo -e "${GREEN}   [OK] GPU_VENDOR correctamente asignado como 'Desconocido'${NC}"
 else
     echo -e "${YELLOW}   [!] GPU_VENDOR no es 'Desconocido' en VM${NC}"
 fi
 
-if grep -q "DEVICE_TYPE.*desktop" "$LOG_FILE"; then
+# BUG#5 FIX: era "DEVICE_TYPE.*desktop" — el log imprime "Tipo de dispositivo: desktop"
+if grep -q "Tipo de dispositivo: desktop" "$LOG_FILE"; then
     echo -e "${GREEN}   [OK] DEVICE_TYPE correctamente asignado como 'desktop'${NC}"
 else
     echo -e "${YELLOW}   [!] DEVICE_TYPE no es 'desktop'${NC}"
 fi
 
-# Contar errores - grep -c devuelve 0 con exit 1 cuando no hay coincidencias
 ERRORS=0
 if grep -q "^FAILED" "$LOG_FILE" 2>/dev/null; then
     ERRORS=$(grep -c "^FAILED" "$LOG_FILE")

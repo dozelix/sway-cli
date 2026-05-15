@@ -1,11 +1,12 @@
 #!/bin/bash
 # =================================================================
-# Versión: 0.0.2-alpha
+# Versión: 0.0.4
 # eaSway - Módulo de Instalación con Control de Errores
 # Finalidad: Garantizar que el entorno base esté presente.
-# Cambios install v0.0.3-alpha:
-#implementacion de OS_ID y OS_VER para manejar casos específicos de paquetes
-#(ej. libegl1-mesa en Debian 12)
+# Fix v0.0.4:
+# issue: #22
+#   - BUG#2: Eliminado echo de $ARCH que se imprimía vacío
+#   - BUG#4: apt autoremove movido dentro del guard de apt
 # =================================================================
 
 #def colors
@@ -39,9 +40,9 @@ echo -e "${BLUE}   - En VM: $IN_VM${NC}\n"
 # =================================================================
 # 0. DETECCIÓN DE ENTORNO
 # =================================================================
+# BUG#2 FIX: eliminado "echo $ARCH" — ARCH nunca se declara en este archivo.
+# La arquitectura se detecta y muestra en check_hardware.sh.
 IN_VM=${IN_VM:-false}
-
-echo -e "${BLUE}   - Arquitectura: $ARCH${NC}"
 
 # =================================================================
 # 1. DEFINICIÓN DE PAQUETES POR PRIORIDAD
@@ -55,43 +56,32 @@ OS_VER=$(grep '^VERSION_ID=' /etc/os-release | cut -d'=' -f2 | tr -d '"')
 WAYLAND_CORE=("wayland-protocols" "libwayland-egl1" "mesa-utils" "xwayland")
 
 get_extra_deps() {
-    # Combinamos ID y Versión en una sola variable para el match
     case "$1-$2" in
         "debian-12" | "ubuntu-22.04")
-            # Versiones que aún requieren o prefieren el sufijo -mesa
             echo "libegl1-mesa libgl1-mesa-dri"
             ;;
         "debian-13" | "ubuntu-24.04" | "ubuntu-26.04")
-            # Versiones modernas con nombres de paquetes limpios
             echo "libegl1 libgl1-mesa-dri"
             ;;
         *)
-            # Fallback para versiones futuras o genéricas
             echo "libegl1 libgl1-mesa-dri"
             ;;
     esac
 }
 
-# Inyección segura
-# Usamos ( ) para asegurar que se trate como una lista de elementos
-# Obtenemos la cadena de la función
 EXTRA_DEPS_STR=$(get_extra_deps "$OS_ID" "$OS_VER")
-
-# Dividimos la cadena en un arreglo temporal de forma segura
 read -r -a EXTRA_DEPS_ARRAY <<< "$EXTRA_DEPS_STR"
-
-# Agregamos los elementos al arreglo principal
 WAYLAND_CORE+=("${EXTRA_DEPS_ARRAY[@]}")
 echo "[i] Instalando para $OS_ID ($OS_VER)"
 echo "[i] Paquetes a instalar: ${WAYLAND_CORE[*]}"
 
-# def compCritic easway (compositor, barra, launcher y notificador)
+# def compCritic easway
 CRITICAL_PKGS=(
     "sway"
     "waybar"
     "wofi"
     "mako-notifier")
-# Utilidades y aplicaciones de usuario
+
 UTILITY_PKGS=(
     "swaybg"
     "swayidle"
@@ -106,12 +96,11 @@ UTILITY_PKGS=(
 )
 
 if [ "$DEVICE_TYPE" = "laptop" ]; then
-    # Añadir TLP y herramientas de brillo
     UTILITY_PKGS+=("tlp" "brightnessctl" "libinput-tools")
 fi
 
 # =================================================================
-# 1.5 PAQUETES CONDICIONALES POR GPU (SW-14)
+# 2 PAQUETES CONDICIONALES POR GPU
 # =================================================================
 
 add_gpu_packages() {
@@ -141,16 +130,14 @@ else
 fi
 
 # =================================================================
-# 2. ACTUALIZACIÓN INTELIGENTE DE REPOSITORIOS
+# 3 ACTUALIZACIÓN INTELIGENTE DE REPOSITORIOS
 # =================================================================
 echo -e "${YELLOW}>> Verificando estado de repositorios...${NC}"
 
-# Validar que apt está disponible
 if ! command -v apt &>/dev/null; then
-    echo -e "${YELLOW}   [!] 'apt' no disponible. Saltando actualización de repositorios.${NC}"
+    echo -e "${YELLOW}   [!] 'apt' no disponible. Saltando instalación de paquetes.${NC}"
     echo -e "${YELLOW}   [!] Esto es normal en entornos de testing/Docker con APT simulado.${NC}"
 else
-    # Si no existe el archivo de stamp, forzamos actualización
     if [ ! -f /var/lib/apt/periodic/update-success-stamp ]; then
         last_update=0
     else
@@ -168,19 +155,11 @@ else
     else
         echo -e "${GREEN}   [OK] Repositorios actualizados recientemente.${NC}"
     fi
-fi
 
-# =================================================================
-# 3. INSTALACIÓN DE COMPONENTES CORE (ORDENADA)
-# =================================================================
-
-# Primero: Protocolos y Drivers
-echo -e "${YELLOW}>> Instalando protocolos y drivers de Wayland...${NC}"
-
-if ! command -v apt &>/dev/null; then
-    echo -e "${YELLOW}   [!] 'apt' no disponible. Saltando instalación de paquetes.${NC}"
-    echo -e "${YELLOW}   [!] Continuar con pasos posteriores...${NC}"
-else
+    # =================================================================
+    # 3. INSTALACIÓN DE COMPONENTES CORE (ORDENADA)
+    # =================================================================
+    echo -e "${YELLOW}>> Instalando protocolos y drivers de Wayland...${NC}"
     if sudo apt install -y "${WAYLAND_CORE[@]}"; then
         echo -e "${GREEN}   [OK] Librerías base instaladas.${NC}"
     else
@@ -188,7 +167,6 @@ else
         exit 1
     fi
 
-    # Segundo: Compositor y Entorno
     echo -e "${YELLOW}>> Instalando componentes críticos de Sway...${NC}"
     if sudo apt install -y "${CRITICAL_PKGS[@]}"; then
         echo -e "${GREEN}   [OK] Sway y componentes core instalados.${NC}"
@@ -206,10 +184,18 @@ else
     else
         echo -e "${YELLOW}   [!] Algunos paquetes opcionales fallaron. Revisa los logs.${NC}"
     fi
+
+    # =================================================================
+    # 8. LIMPIEZA FINAL
+    # BUG#4 FIX: apt autoremove movido dentro del bloque "command -v apt"
+    # Antes estaba fuera y fallaba en entornos sin apt real
+    # =================================================================
+    echo -e "${YELLOW}>> Limpiando caché de apt...${NC}"
+    sudo apt autoremove -y && sudo apt autoclean
 fi
 
 # =================================================================
-# 5. CONFIGURACIÓN DE USUARIO Y GRUPOS (SW-05)
+# 4 CONFIGURACIÓN DE USUARIO Y GRUPOS (SW-05)
 # =================================================================
 echo -e "${YELLOW}>> Configurando permisos de usuario...${NC}"
 
@@ -227,7 +213,7 @@ else
 fi
 
 # =================================================================
-# 6. PERMISOS PARA CONTROL DE BRILLO
+# 5 PERMISOS PARA CONTROL DE BRILLO
 # =================================================================
 if [ "$IN_VM" = false ] && command -v light > /dev/null; then
     echo -e "   [i] Configurando SUID para 'light'..."
@@ -241,7 +227,7 @@ elif [ "$IN_VM" = true ]; then
 fi
 
 # =================================================================
-# 7. ACTIVACIÓN DE SERVICIOS (SW-03)
+# 6 ACTIVACIÓN DE SERVICIOS
 # =================================================================
 echo -e "${YELLOW}>> Verificando gestor de servicios...${NC}"
 
@@ -255,11 +241,5 @@ if pidof systemd > /dev/null 2>&1 || [ -d /run/systemd/system ]; then
 else
     echo -e "${YELLOW}   [!] systemd NO disponible. Saltando activación de servicios.${NC}"
 fi
-
-# =================================================================
-# 8. LIMPIEZA FINAL
-# =================================================================
-echo -e "${YELLOW}>> Limpiando caché de apt...${NC}"
-sudo apt autoremove -y && sudo apt autoclean
 
 echo -e "${GREEN}>> Instalación de paquetes completada.${NC}"

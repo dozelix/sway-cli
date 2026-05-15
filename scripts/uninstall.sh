@@ -1,12 +1,12 @@
 #!/bin/bash
 
 # =================================================================
-# Versión: 0.1
+# Versión: 0.2
 # eaSway - Módulo de Desinstalación y Limpieza
 # Finalidad: remover el entorno de forma segura para el usuario.
-# cambios uninstall 0.0.3_alpha:
-# implementar un array en PKGS
-# Validar si el array tiene elementos antes de proceder
+# Fix v0.2:
+#   - BUG#7: Agregado "foot" al array APPS de restauración para
+#     que coincida con lo que despliega setup_config.sh
 # =================================================================
 
 RED='\033[0;31m'
@@ -30,7 +30,7 @@ PKGS=(
     "light"
     "pavucontrol"
 )
-    
+
 # Validar si el array tiene elementos antes de proceder
 if [ ${#PKGS[@]} -gt 0 ]; then
     echo ">> Iniciando purga de paquetes..."
@@ -41,17 +41,18 @@ fi
 # 2. Restauración de archivos de configuración
 echo " - Restaurando backups de .config..."
 CONFIG_DIR="$HOME/.config"
-APPS=("sway" "waybar" "mako" "wofi")
+
+# BUG#7 FIX: agregado "foot" para que coincida con setup_config.sh
+# setup_config.sh despliega: sway, waybar, mako, wofi, foot
+APPS=("sway" "waybar" "mako" "wofi" "foot")
 
 for APP in "${APPS[@]}"; do
     # SC2115: Protección ante variables vacías para evitar borrar '/'
-    # Si APP o CONFIG_DIR están vacíos, el script fallará aquí de forma segura.
     rm -rf "${CONFIG_DIR:?}/${APP:?}"
-    
+
     # SC2012: Uso de 'find' en lugar de 'ls' para manejar backups
-    # Buscamos directorios que coincidan con el patrón, ordenamos y tomamos el último
     LATEST_BAK=$(find "$CONFIG_DIR" -maxdepth 1 -type d -name "${APP}_bak_*" 2>/dev/null | sort -r | head -n 1)
-    
+
     if [ -n "$LATEST_BAK" ]; then
         mv "$LATEST_BAK" "$CONFIG_DIR/$APP"
         echo -e "   ${GREEN}[OK]${NC} Restaurado backup para $APP"

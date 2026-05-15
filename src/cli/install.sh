@@ -1,9 +1,12 @@
 #!/bin/bash
 
 # =================================================================
-# version: 0.0.4
+# version: 0.0.5
 # eaSway - Orquestador de Instalación
 # Finalidad: Punto de entrada genérico para el despliegue del entorno.
+# Fix v0.0.5:
+#   - BUG#3: Agregado color BLUE faltante
+#   - BUG#3: Corregida línea de resumen que usaba ${NC} en lugar de ${BLUE}
 # =================================================================
 
 BASE_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
@@ -12,6 +15,7 @@ SCRIPTS_DIR="$REPO_ROOT/scripts"
 
 GREEN='\033[0;32m'
 RED='\033[0;31m'
+BLUE='\033[0;34m'
 NC='\033[0m'
 
 echo -e "${GREEN}Iniciando eaSway para Debian${NC}"
@@ -73,12 +77,13 @@ run_step_source() {
 run_step_source "check_hardware.sh" "Detección de Hardware"
 
 # Mostrar variables detectadas
-echo -e "${NC}>> Variables de Entorno Detectadas:${NC}"
+# BUG#3 FIX: era "${NC}>> Variables..." — NC en lugar de BLUE
+echo -e "${BLUE}>> Variables de Entorno Detectadas:${NC}"
 echo -e "   - EN_VIRTUALIZACIÓN: ${IN_VM:-false}"
 echo -e "   - TIPO_DISPOSITIVO: ${DEVICE_TYPE:-undefined}"
 echo -e "   - GPU: ${GPU_VENDOR:-undefined}\n"
 
-# Pasos 2-4: bash normal
+# Pasos 2-4: bash normal — las variables llegan via export del environment
 run_step "install_packages.sh"  "Instalación de Paquetes"
 run_step "setup_config.sh"      "Despliegue de Configuraciones"
 run_step "post_install.sh"      "Ajustes de Sistema y Permisos"
