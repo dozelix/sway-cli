@@ -4,9 +4,6 @@
 # version: 0.0.4
 # eaSway - Orquestador de Instalación
 # Finalidad: Punto de entrada genérico para el despliegue del entorno.
-# Fix v0.0.4:
-#   - REPO_ROOT corregido: install.sh vive en la raíz del repo,
-#     no en src/cli/, por lo que ya no hay que subir dos niveles.
 # =================================================================
 
 BASE_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
@@ -76,7 +73,7 @@ run_step_source() {
 run_step_source "check_hardware.sh" "Detección de Hardware"
 
 # Mostrar variables detectadas
-echo -e "${BLUE}>> Variables de Entorno Detectadas:${NC}"
+echo -e "${NC}>> Variables de Entorno Detectadas:${NC}"
 echo -e "   - EN_VIRTUALIZACIÓN: ${IN_VM:-false}"
 echo -e "   - TIPO_DISPOSITIVO: ${DEVICE_TYPE:-undefined}"
 echo -e "   - GPU: ${GPU_VENDOR:-undefined}\n"
