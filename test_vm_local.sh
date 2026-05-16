@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # =================================================================
 # eaSway - Test Local VM Simulation
@@ -12,11 +13,12 @@
 #     coincidan con el output real de check_hardware.sh.
 # =================================================================
 
-set -e
-
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TEST_ENV_DIR="${SCRIPT_DIR}/.test_vm_env"
 LOG_FILE="${SCRIPT_DIR}/test_vm_local.log"
+
+# Cleanup de temporales al salir
+trap 'rm -rf "$TEST_ENV_DIR" "$LOG_FILE" 2>/dev/null || true' EXIT INT TERM
 
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -97,6 +99,7 @@ test_step_source() {
     local desc="$2"
     local tmp_out
     tmp_out=$(mktemp)
+    trap "rm -f '$tmp_out'" RETURN
 
     echo -e "${YELLOW}[TEST] $desc${NC}"
     echo "--- $desc ---" >> "$LOG_FILE"
@@ -106,7 +109,6 @@ test_step_source() {
 
     cat "$tmp_out"
     cat "$tmp_out" >> "$LOG_FILE"
-    rm -f "$tmp_out"
 
     if [ "$exit_code" -eq 0 ]; then
         echo -e "${GREEN}   ✔ $desc exitoso${NC}"

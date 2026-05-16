@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 # =================================================================
 # Versión: 0.0.4
 # eaSway - Módulo de Instalación con Control de Errores
@@ -42,8 +43,8 @@ echo -e "${BLUE}   - En VM: $IN_VM${NC}\n"
 # =================================================================
 
 # Identificar el sistema
-OS_ID=$(grep '^ID=' /etc/os-release | cut -d'=' -f2 | tr -d '"')
-OS_VER=$(grep '^VERSION_ID=' /etc/os-release | cut -d'=' -f2 | tr -d '"')
+OS_ID="$(grep '^ID=' /etc/os-release | cut -d'=' -f2 | tr -d '"')"
+OS_VER="$(grep '^VERSION_ID=' /etc/os-release | cut -d'=' -f2 | tr -d '"')"
 
 # Definir paquetes base
 WAYLAND_CORE=("wayland-protocols" "libwayland-egl1" "mesa-utils" "xwayland")
@@ -143,7 +144,7 @@ else
 
     if [ $((now - last_update)) -gt 86400 ]; then
         echo -e "   [i] Repositorios con más de 24h. Actualizando..."
-        if ! sudo apt update; then
+        if ! DEBIAN_FRONTEND=noninteractive sudo apt update; then
             echo -e "${RED}   [ERROR] Falló apt update. Verifica tu conexión.${NC}"
             exit 1
         fi
@@ -155,7 +156,7 @@ else
     # 5. INSTALACIÓN DE COMPONENTES CORE (ORDENADA)
     # =================================================================
     echo -e "${YELLOW}>> Instalando protocolos y drivers de Wayland...${NC}"
-    if sudo apt install -y "${WAYLAND_CORE[@]}"; then
+    if DEBIAN_FRONTEND=noninteractive sudo apt install -yq "${WAYLAND_CORE[@]}"; then
         echo -e "${GREEN}   [OK] Librerías base instaladas.${NC}"
     else
         echo -e "${RED}   [ERROR] Fallo crítico en librerías Wayland. Abortando.${NC}"
@@ -163,7 +164,7 @@ else
     fi
 
     echo -e "${YELLOW}>> Instalando componentes críticos de Sway...${NC}"
-    if sudo apt install -y "${CRITICAL_PKGS[@]}"; then
+    if DEBIAN_FRONTEND=noninteractive sudo apt install -yq "${CRITICAL_PKGS[@]}"; then
         echo -e "${GREEN}   [OK] Sway y componentes core instalados.${NC}"
     else
         echo -e "${RED}   [ERROR] Fallo crítico al instalar Sway. Abortando.${NC}"
@@ -174,7 +175,7 @@ else
     # 6. INSTALACIÓN DE UTILIDADES
     # =================================================================
     echo -e "${YELLOW}>> Instalando utilidades y extras...${NC}"
-    if sudo apt install -y "${UTILITY_PKGS[@]}"; then
+    if DEBIAN_FRONTEND=noninteractive sudo apt install -yq "${UTILITY_PKGS[@]}"; then
         echo -e "${GREEN}   [OK] Utilidades instaladas correctamente.${NC}"
     else
         echo -e "${YELLOW}   [!] Algunos paquetes opcionales fallaron. Revisa los logs.${NC}"
@@ -185,7 +186,7 @@ else
     # BUG#4 FIX: apt autoremove movido dentro del bloque "command -v apt"
     # =================================================================
     echo -e "${YELLOW}>> Limpiando caché de apt...${NC}"
-    sudo apt autoremove -y && sudo apt autoclean
+    DEBIAN_FRONTEND=noninteractive sudo apt autoremove -yq && DEBIAN_FRONTEND=noninteractive sudo apt autoclean
 fi
 
 # =================================================================

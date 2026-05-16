@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # =================================================================
 # eaSway - Módulo de Variables de Entorno Gráfico
@@ -52,7 +53,7 @@ export WLR_RENDERER_ALLOW_SOFTWARE=1"
             ;;
     esac
 
-    sudo tee "$ENV_FILE" > /dev/null <<'EOF'
+    sudo tee "$ENV_FILE" > /dev/null <<'EOF' || { echo -e "${RED}   [ERROR] tee falló al escribir.${NC}"; exit 1; }
 # =================================================================
 # eaSway - Graphic Environment Variables
 # Generado automáticamente por gpu_environment.sh

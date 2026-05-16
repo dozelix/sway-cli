@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # =================================================================
 # Versión: 0.1
@@ -41,7 +42,7 @@ for APP in "${APPS[@]}"; do
         # Crear backup si ya existe la carpeta de destino
         if [ -d "$DEST" ]; then
             BACKUP_PATH="${DEST}_bak_$(date +%Y%m%d_%H%M%S)"
-            mv "$DEST" "$BACKUP_PATH"
+            mv "$DEST" "$BACKUP_PATH" || { echo -e "${RED}   [!] Falló backup para $APP.${NC}"; exit 1; }
             echo -e "   - Backup creado: $APP -> $(basename "$BACKUP_PATH")"
         fi
 
