@@ -51,19 +51,19 @@ WAYLAND_CORE=("wayland-protocols" "libwayland-egl1" "mesa-utils" "xwayland")
 get_extra_deps() {
     case "$1-$2" in
         "debian-12" | "ubuntu-22.04")
-            echo "libegl1-mesa libgl1-mesa-dri"
+            printf "%s\n" "libegl1-mesa" "libgl1-mesa-dri"
             ;;
         "debian-13" | "ubuntu-24.04" | "ubuntu-26.04")
-            echo "libegl1 libgl1-mesa-dri"
+            printf "%s\n" "libegl1" "libgl1-mesa-dri"
             ;;
         *)
-            echo "libegl1 libgl1-mesa-dri"
+            printf "%s\n" "libegl1" "libgl1-mesa-dri"
             ;;
     esac
 }
 
-EXTRA_DEPS_STR=$(get_extra_deps "$OS_ID" "$OS_VER")
-read -r -a EXTRA_DEPS_ARRAY <<< "$EXTRA_DEPS_STR"
+# Usar mapfile para llenar el array correctamente
+mapfile -t EXTRA_DEPS_ARRAY < <(get_extra_deps "$OS_ID" "$OS_VER")
 WAYLAND_CORE+=("${EXTRA_DEPS_ARRAY[@]}")
 echo "[i] Instalando para $OS_ID ($OS_VER)"
 echo "[i] Paquetes a instalar: ${WAYLAND_CORE[*]}"
@@ -136,10 +136,10 @@ else
     if [ ! -f /var/lib/apt/periodic/update-success-stamp ]; then
         last_update=0
     else
-        last_update=$(stat -c %Y /var/lib/apt/periodic/update-success-stamp 2>/dev/null || echo 0)
+        last_update=$(stat -c %Y /var/lib/apt/periodic/update-success-stamp 2>/dev/null) || last_update=0
     fi
 
-    now=$(date +%s)
+    now=$(date +%s) || now=0
 
     if [ $((now - last_update)) -gt 86400 ]; then
         echo -e "   [i] Repositorios con más de 24h. Actualizando..."

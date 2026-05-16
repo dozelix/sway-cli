@@ -52,7 +52,7 @@ export WLR_RENDERER_ALLOW_SOFTWARE=1"
             ;;
     esac
 
-    sudo tee "$ENV_FILE" > /dev/null <<EOF
+    sudo tee "$ENV_FILE" > /dev/null <<'EOF'
 # =================================================================
 # eaSway - Graphic Environment Variables
 # Generado automáticamente por gpu_environment.sh
@@ -66,8 +66,12 @@ export CLUTTER_BACKEND=wayland
 export SDL_VIDEODRIVER=wayland
 
 # Configuración específica por Hardware
-$GPU_VARS
 EOF
+
+    # Agregar variables específicas de GPU al archivo
+    {
+        echo "$GPU_VARS"
+    } | sudo tee -a "$ENV_FILE" > /dev/null
 
     sudo chmod +x "$ENV_FILE"
     echo -e "${GREEN}   [OK] Variables de entorno generadas en $ENV_FILE${NC}"

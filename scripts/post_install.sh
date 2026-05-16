@@ -17,7 +17,7 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-REPO_ROOT=$(readlink -f "$(dirname "$0")/..")
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)" || { echo -e "${RED}[ERROR] No se pudo determinar REPO_ROOT.${NC}"; exit 1; }
 
 # Importar IN_VM si está disponible
 export IN_VM=${IN_VM:-false}
@@ -26,11 +26,10 @@ echo -e "${YELLOW}>> Iniciando ajustes finales de sistema...${NC}"
 
 # 1. Configuración de Grupos
 TARGET_USER="${SUDO_USER:-${USER:-$(whoami)}}"
-
 # Validar que el usuario existe
 if ! id "$TARGET_USER" &>/dev/null; then
-    echo -e "${YELLOW}[!] Usuario '$TARGET_USER' no encontrado. Usando 'user'.${NC}"
-    TARGET_USER="user"
+    echo -e "${YELLOW}[!] Usuario '$TARGET_USER' no encontrado.${NC}"
+    TARGET_USER=$(getent passwd 1000 | cut -d: -f1) || TARGET_USER="root"
 fi
 
 echo -e "   - Configurando acceso a hardware para: '${TARGET_USER}'..."

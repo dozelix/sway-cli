@@ -31,7 +31,7 @@ SKIP_HARDWARE_DETECTION=false
 
 # Detectar cualquier tipo de virtualización
 if command -v systemd-detect-virt &>/dev/null; then
-    VIRT_ENV=$(systemd-detect-virt 2>/dev/null)
+    VIRT_ENV=$(systemd-detect-virt 2>/dev/null) || VIRT_ENV="unknown"
     if [ "$VIRT_ENV" != "none" ]; then
         echo -e "${YELLOW}   [!] Entorno virtualizado detectado: $VIRT_ENV${NC}"
         echo -e "${YELLOW}   [!] Sway requiere GPU con soporte DRM/KMS.${NC}"
@@ -82,7 +82,7 @@ fi
 IS_LAPTOP=false
 
 if [ -f /sys/class/dmi/id/chassis_type ]; then
-    CHASSIS_ID=$(cat /sys/class/dmi/id/chassis_type)
+    CHASSIS_ID=$(cat /sys/class/dmi/id/chassis_type 2>/dev/null)
     case "$CHASSIS_ID" in
         8|9|10|11|12|14) IS_LAPTOP=true ;;
     esac
@@ -121,7 +121,7 @@ if ! command -v lspci &>/dev/null; then
     export GPU_VENDOR="Desconocido"
     WARNINGS=$((WARNINGS + 1))
 else
-    GPU_RAW=$(lspci | grep -iE 'vga|display|3d controller' | head -n 1)
+    GPU_RAW=$(lspci 2>/dev/null | grep -iE 'vga|display|3d controller' | head -n 1) || GPU_RAW=""
     GPU_NAME="${GPU_RAW#*: }"
     export GPU_VENDOR
     GPU_VENDOR=$(classify_gpu "$GPU_RAW")
