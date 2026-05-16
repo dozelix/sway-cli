@@ -83,6 +83,13 @@ fi
 
 ---
 
+### Entorno de Desarrollo Recomendado
+- **VS Code:** instala la extensión [`timonwong.shellcheck`](https://marketplace.visualstudio.com/items?itemName=timonwong.shellcheck) para validación de scripts en tiempo real.
+- El archivo `.editorconfig` ya normaliza el fin de línea a LF para todos los `.sh`.
+(si esto no funciona, editarlo en el perfil del workspace dentro de vscode)
+
+---
+
 ### Contacto y Créditos
 
 **Desarrollado con ❤️ por dozelix**
