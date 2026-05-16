@@ -80,7 +80,7 @@ if [ "$SKIP_HARDWARE_DETECTION" = true ]; then
     echo -e "   - Fabricante de GPU: $GPU_VENDOR"
     echo -e "   - En virtualización: $IN_VM"
     echo -e "${GREEN}>> Configuración de virtualización completada.${NC}"
-    exit 0
+    return 0 2>/dev/null || exit 0
 fi
 
 # =================================================================
@@ -219,4 +219,10 @@ else
     echo -e "${GREEN}>> Verificación de hardware completada sin problemas.${NC}"
 fi
 
-exit 0
+# Determinar si el script fue sourceado o ejecutado directamente.
+# shellcheck disable=SC2250
+if [ "${BASH_SOURCE[0]}" != "$0" ]; then
+    return 0
+else
+    exit 0
+fi
