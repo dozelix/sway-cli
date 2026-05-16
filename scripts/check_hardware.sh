@@ -2,10 +2,12 @@
 set -euo pipefail
 
 # =================================================================
-# Versión: 0.0.4
+# Versión: 0.0.4-alpha
 # eaSway - Módulo de Detección de Hardware
 # Finalidad: Verificar el entorno antes de la instalación.
-# Fix v0.0.4:
+# Fix v0.0.4-alpha (AUDIT_TRACE_V3):
+#   - T05 FIX: DMI-first virtualization check (prevents iGPU false positives)
+#   - T06 FIX: Kernel module validation for real GPU detection
 #   - En VM/Docker: exportar GPU_VENDOR="Desconocido" y
 #     DEVICE_TYPE="desktop" antes de salir, para que los módulos
 #     siguientes tengan las variables disponibles.
@@ -30,21 +32,36 @@ IS_VM=false
 export IN_VM=false
 SKIP_HARDWARE_DETECTION=false
 
-# Detectar cualquier tipo de virtualización
-if command -v systemd-detect-virt &>/dev/null; then
-    VIRT_ENV=$(systemd-detect-virt 2>/dev/null) || VIRT_ENV="unknown"
-    if [ "$VIRT_ENV" != "none" ]; then
-        echo -e "${YELLOW}   [!] Entorno virtualizado detectado: $VIRT_ENV${NC}"
-        echo -e "${YELLOW}   [!] Sway requiere GPU con soporte DRM/KMS.${NC}"
-        echo "[!] En virtualización, Sway requiere aceleración 3D habilitada en la VM."
-        IS_VM=true
-        export IN_VM=true
-        export DEVICE_TYPE="desktop"
-        export GPU_VENDOR="Desconocido"
-        WARNINGS=$((WARNINGS + 1))
-        SKIP_HARDWARE_DETECTION=true
-        echo -e "   ----------------------------------------"
-        echo -e "${GREEN}>> Virtualización detectada. Exportando configuración por defecto.${NC}"
+# T05 FIX: Verify physical hardware via DMI before assuming virtualization
+# Prioritize /sys/class/dmi/id/board_vendor over systemd-detect-virt to avoid
+# false positives when iGPU drivers load generic VGA modules.
+is_physical_hardware() {
+    if [ -f /sys/class/dmi/id/board_vendor ]; then
+        local vendor=$(cat /sys/class/dmi/id/board_vendor 2>/dev/null)
+        if [ -n "$vendor" ] && [ "$vendor" != "QEMU" ] && [ "$vendor" != "VMware" ] && [ "$vendor" != "VirtualBox" ]; then
+            return 0
+        fi
+    fi
+    return 1
+}
+
+# Only trust systemd-detect-virt if DMI doesn't confirm physical hardware
+if ! is_physical_hardware; then
+    if command -v systemd-detect-virt &>/dev/null; then
+        VIRT_ENV=$(systemd-detect-virt 2>/dev/null) || VIRT_ENV="unknown"
+        if [ "$VIRT_ENV" != "none" ]; then
+            echo -e "${YELLOW}   [!] Entorno virtualizado detectado: $VIRT_ENV${NC}"
+            echo -e "${YELLOW}   [!] Sway requiere GPU con soporte DRM/KMS.${NC}"
+            echo "[!] En virtualización, Sway requiere aceleración 3D habilitada en la VM."
+            IS_VM=true
+            export IN_VM=true
+            export DEVICE_TYPE="desktop"
+            export GPU_VENDOR="Desconocido"
+            WARNINGS=$((WARNINGS + 1))
+            SKIP_HARDWARE_DETECTION=true
+            echo -e "   ----------------------------------------"
+            echo -e "${GREEN}>> Virtualización detectada. Exportando configuración por defecto.${NC}"
+        fi
     fi
 fi
 
@@ -117,6 +134,14 @@ classify_gpu() {
     fi
 }
 
+# T06 FIX: Validate GPU is not virtual by checking kernel module load state.
+# Prevents false positives when QEMU/VirtIO GPUs pass through lspci grep.
+is_real_gpu() {
+    lsmod 2>/dev/null > /tmp/lsmod_check.tmp || return 1
+    grep -qE "i915|amdgpu|nouveau|nvidia" /tmp/lsmod_check.tmp && return 0
+    return 1
+}
+
 if ! command -v lspci &>/dev/null; then
     echo -e "${YELLOW}   [!] 'lspci' no encontrado. No se puede detectar la GPU.${NC}"
     export GPU_VENDOR="Desconocido"
@@ -129,25 +154,29 @@ else
 
     echo -e "   - GPU detectada: ${GPU_NAME:-Desconocida}"
 
-    case "$GPU_VENDOR" in
-        "NVIDIA")
-            echo -e "${YELLOW}   [!] GPU NVIDIA detectada. Requiere drivers propietarios.${NC}"
-            WARNINGS=$((WARNINGS + 1))
-            ;;
-        "AMD")
-            echo -e "${GREEN}   [OK] GPU AMD detectada.${NC}"
-            ;;
-        "Intel")
-            echo -e "${GREEN}   [OK] GPU Intel detectada.${NC}"
-            ;;
-        *)
-            echo -e "${YELLOW}   [?] Fabricante de GPU no identificado.${NC}"
-            if [ "$IS_VM" = true ]; then
-                echo -e "${YELLOW}   [i] GPU virtual detectada (esperado en VM).${NC}"
-            fi
-            WARNINGS=$((WARNINGS + 1))
-            ;;
-    esac
+    # If lspci found a GPU but no real driver is loaded, it's likely virtual
+    if [ -z "$GPU_RAW" ] || ! is_real_gpu; then
+        echo -e "${YELLOW}   [?] GPU virtual o no soportada.${NC}"
+        export GPU_VENDOR="Desconocido"
+        WARNINGS=$((WARNINGS + 1))
+    else
+        case "$GPU_VENDOR" in
+            "NVIDIA")
+                echo -e "${YELLOW}   [!] GPU NVIDIA detectada. Requiere drivers propietarios.${NC}"
+                WARNINGS=$((WARNINGS + 1))
+                ;;
+            "AMD")
+                echo -e "${GREEN}   [OK] GPU AMD detectada.${NC}"
+                ;;
+            "Intel")
+                echo -e "${GREEN}   [OK] GPU Intel detectada.${NC}"
+                ;;
+            *)
+                echo -e "${YELLOW}   [?] Fabricante de GPU no identificado.${NC}"
+                WARNINGS=$((WARNINGS + 1))
+                ;;
+        esac
+    fi
 fi
 
 # =================================================================
