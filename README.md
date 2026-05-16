@@ -1,15 +1,17 @@
-### eaSway Ecosystem
+### eaSway
 
-Un ecosistema integral de instalación y personalización para elevar la experiencia de **Sway WM** al siguiente nivel. **SwayCLI** nace con el objetivo de eliminar la fricción inicial al configurar un gestor de ventanas tipo tiling. Ofrecemos una **herramienta CLI potente**, una **interfaz gráfica intuitiva** y una **experiencia de escritorio pulida** desde el primer segundo.
+Un instalador integral de instalación y personalización para elevar la experiencia de **Sway WM** al siguiente nivel. **SwayCLI** nace con el objetivo de eliminar la fricción inicial al configurar un gestor de ventanas tipo tiling. Ofrecemos una **herramienta CLI potente**, una **interfaz gráfica intuitiva** y una **experiencia de escritorio pulida** desde el primer segundo.
+
+nuestro tipo de usuario es el que tiene conocimientos basicos de terminal en base debian que quiera implementar tillig en wayland sin muchas complicaciones.
+
 
 ---
 
 ### Estado del Proyecto
 
-**v0.0.3-alpha**  
-**Día 3**
+**v0.0.5-alpha**  
+**en desarrollo**
 
-Actualmente hemos finalizado la **Fase de Infraestructura**. El instalador ya es capaz de detectar la versión de tu OS y ajustar las dependencias de **Wayland** automáticamente.
 
 ---
 
@@ -19,9 +21,9 @@ Actualmente hemos finalizado la **Fase de Infraestructura**. El instalador ya es
 eaSway/
 ├── src/
 │   ├── cli/             # Lógica de instalación por terminal
-│   └── gui/             # Aplicación GTK4/Libadwaita
+│   └── gui/             # Aplicación GTK4/Libadwaita (aun sin desarrollar)
 ├── dotfiles/            # Plantillas de configuración (.conf)
-├── scripts/             # Utilidades de detección de hardware y OS
+├── scripts/             # Utilidades de detección de hardware,OS y herramientas del instalador cli
 └── assets/              # Recursos visuales y logos
 ```
 
@@ -30,6 +32,7 @@ eaSway/
 ### Entorno de Pruebas Sandbox
 
 Para el desarrollo seguro, incluimos un entorno basado en **Docker** que permite validar la lógica de los scripts sin riesgo para el host.
+(aun falta implementarlo dentro de github, actualmente dentro del repositorio)
 
 **Cómo lanzar los tests:**  
 ```bash
@@ -45,6 +48,7 @@ El entorno Docker actual se utiliza para validación de sintaxis, dependencias y
 ### Roadmap
 
 - [x] **Soporte dinámico para Debian 12 Bookworm y Debian 13 Trixie**
+- [x] **Soporte dinamico para las ultimas 2 versiones Ubuntu LTS**
 - [x] **Scripts de desinstalación con protección de backups**
 - [ ] **Implementación de sway-gui alpha**
 - [ ] **Soporte oficial para distribuciones basadas en Arch Linux**

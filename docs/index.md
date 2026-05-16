@@ -40,8 +40,8 @@ eaSway/
 **Comando para lanzar tests en sandbox**
 
 ```bash
-chmod +x test_eaSway.sh
-./test_eaSway.sh
+chmod +x test_vm_local.sh
+./test_vm_local.sh
 ```
 
 **Detección de OS en bash**
@@ -79,7 +79,14 @@ fi
 - **Fork y ramas:** Haz un fork y crea una rama por feature.  
 - **Commits claros:** Mensajes de commit descriptivos y atómicos.  
 - **PRs con contexto:** Incluye referencias a IDs de detección o seguridad cuando aplique.  
-- **Pruebas:** Asegura que tus cambios pasen `test_eaSway.sh` en el sandbox antes de abrir el PR.
+- **Pruebas:** Asegura que tus cambios pasen `test_vm_local.sh` en el sandbox antes de abrir el PR.
+
+---
+
+### Entorno de Desarrollo Recomendado
+- **VS Code:** instala la extensión [`timonwong.shellcheck`](https://marketplace.visualstudio.com/items?itemName=timonwong.shellcheck) para validación de scripts en tiempo real.
+- El archivo `.editorconfig` ya normaliza el fin de línea a LF para todos los `.sh`.
+(si esto no funciona, editarlo en el perfil del workspace dentro de vscode)
 
 ---
 

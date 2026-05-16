@@ -6,18 +6,23 @@ __pycache__/
 # Sistema
 .DS_Store
 Thumbs.db
+
+# Logs de instalación
 *.log
 
 # Entornos virtuales
 venv/
 .venv/
-Dockerfile
 
-# Archivos de configuración
-*.env 
-*.ini
-*.cfg
+# Variables de entorno
+*.env
 
-# Archivos de base de datos
+# Bases de datos
 *.db
 *.sqlite
+
+# Entorno de test local (generado en runtime por test_vm_local.sh)
+.test_vm_env/
+
+# Editor (configuración personal — ver docs/index.md para extensiones recomendadas)
+.vscode/
