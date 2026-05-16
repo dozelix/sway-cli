@@ -23,3 +23,8 @@ Dockerfile
 
 #HERRAMIENTAS DEV
 test_eaSway.sh
+.test_vm_env/usr/bin/lspci
+.test_vm_env/etc/os-release
+.test_vm_env/usr/bin/systemd-detect-virt
+.test_vm_env/usr/bin/sudo
+
