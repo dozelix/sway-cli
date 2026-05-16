@@ -88,24 +88,31 @@ echo -e "${GREEN}   [OK] Environment preparado.${NC}\n"
 # FUNCIONES DE EJECUCIÓN
 # =================================================================
 
-# BUG#1 FIX: test_step_source ejecuta el script con "source" en lugar de "bash".
-# Esto hace que las variables exportadas (GPU_VENDOR, DEVICE_TYPE, IN_VM)
-# persistan en el entorno de este proceso y lleguen a los pasos siguientes.
+# BUG-1 FIX: source dentro de un pipe fuerza subshell — las variables exportadas
+# (GPU_VENDOR, DEVICE_TYPE, IN_VM) se pierden y PIPESTATUS[0] siempre es 0.
+# Solución: source en el proceso actual con salida a fichero temporal; luego
+# volcamos ese fichero a pantalla Y al log sin subshell de por medio.
 test_step_source() {
     local script="$1"
     local desc="$2"
+    local tmp_out
+    tmp_out=$(mktemp)
 
     echo -e "${YELLOW}[TEST] $desc${NC}"
     echo "--- $desc ---" >> "$LOG_FILE"
 
-    # Capturamos stdout al log Y a pantalla con tee, pero source necesita
-    # ejecutarse en el proceso actual para exportar variables.
-    # Solución: ejecutar y luego duplicar output al log.
-    if source "$script" 2>&1 | tee -a "$LOG_FILE"; then
+    source "$script" > "$tmp_out" 2>&1
+    local exit_code=$?
+
+    # Mostrar en pantalla y añadir al log (ya sin subshell)
+    cat "$tmp_out"
+    cat "$tmp_out" >> "$LOG_FILE"
+    rm -f "$tmp_out"
+
+    if [ "$exit_code" -eq 0 ]; then
         echo -e "${GREEN}   ✔ $desc exitoso${NC}"
         echo "SUCCESS" >> "$LOG_FILE"
     else
-        local exit_code=${PIPESTATUS[0]}
         echo -e "${RED}   ✗ $desc falló (exit code: $exit_code)${NC}"
         echo "FAILED (exit code: $exit_code)" >> "$LOG_FILE"
         return "$exit_code"

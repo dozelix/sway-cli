@@ -82,6 +82,10 @@ if [ -f "$REPO_ROOT/assets/wallpapers/easway_wallpaper.webp" ]; then
     WALLPAPER_SRC="$REPO_ROOT/assets/wallpapers/easway_wallpaper.webp"
 elif [ -f "$REPO_ROOT/assets/wallpapers/easway_wallpaper.png" ]; then
     WALLPAPER_SRC="$REPO_ROOT/assets/wallpapers/easway_wallpaper.png"
+elif [ -f "$REPO_ROOT/assets/wallpapers/easway_wallpaper_geometric.svg" ]; then
+    # BUG-7 FIX: el único asset real en el repo es .svg; se agrega como último
+    # fallback para que swaybg no arranque con un path inexistente.
+    WALLPAPER_SRC="$REPO_ROOT/assets/wallpapers/easway_wallpaper_geometric.svg"
 fi
 
 if [ -n "$WALLPAPER_SRC" ]; then

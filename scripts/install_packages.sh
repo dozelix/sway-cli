@@ -17,7 +17,7 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 # =================================================================
-# 0.5. VALIDACIÓN DE VARIABLES CRÍTICAS
+# 1. VALIDACIÓN DE VARIABLES CRÍTICAS
 # =================================================================
 if [ -z "$DEVICE_TYPE" ]; then
     echo -e "${YELLOW}[!] DEVICE_TYPE no definido. Usando 'desktop' por defecto.${NC}"
@@ -38,14 +38,7 @@ echo -e "${BLUE}   - GPU: $GPU_VENDOR${NC}"
 echo -e "${BLUE}   - En VM: $IN_VM${NC}\n"
 
 # =================================================================
-# 0. DETECCIÓN DE ENTORNO
-# =================================================================
-# BUG#2 FIX: eliminado "echo $ARCH" — ARCH nunca se declara en este archivo.
-# La arquitectura se detecta y muestra en check_hardware.sh.
-IN_VM=${IN_VM:-false}
-
-# =================================================================
-# 1. DEFINICIÓN DE PAQUETES POR PRIORIDAD
+# 2. DEFINICIÓN DE PAQUETES POR PRIORIDAD
 # =================================================================
 
 # Identificar el sistema
@@ -102,7 +95,7 @@ if [ "$DEVICE_TYPE" = "laptop" ]; then
 fi
 
 # =================================================================
-# 2 PAQUETES CONDICIONALES POR GPU
+# 3. PAQUETES CONDICIONALES POR GPU
 # =================================================================
 
 add_gpu_packages() {
@@ -132,7 +125,7 @@ else
 fi
 
 # =================================================================
-# 3 ACTUALIZACIÓN INTELIGENTE DE REPOSITORIOS
+# 4. ACTUALIZACIÓN DE REPOSITORIOS
 # =================================================================
 echo -e "${YELLOW}>> Verificando estado de repositorios...${NC}"
 
@@ -159,7 +152,7 @@ else
     fi
 
     # =================================================================
-    # 3. INSTALACIÓN DE COMPONENTES CORE (ORDENADA)
+    # 5. INSTALACIÓN DE COMPONENTES CORE (ORDENADA)
     # =================================================================
     echo -e "${YELLOW}>> Instalando protocolos y drivers de Wayland...${NC}"
     if sudo apt install -y "${WAYLAND_CORE[@]}"; then
@@ -178,7 +171,7 @@ else
     fi
 
     # =================================================================
-    # 4. INSTALACIÓN DE UTILIDADES
+    # 6. INSTALACIÓN DE UTILIDADES
     # =================================================================
     echo -e "${YELLOW}>> Instalando utilidades y extras...${NC}"
     if sudo apt install -y "${UTILITY_PKGS[@]}"; then
@@ -188,7 +181,7 @@ else
     fi
 
     # =================================================================
-    # 8. LIMPIEZA FINAL
+    # 7. LIMPIEZA FINAL
     # BUG#4 FIX: apt autoremove movido dentro del bloque "command -v apt"
     # Antes estaba fuera y fallaba en entornos sin apt real
     # =================================================================
@@ -197,7 +190,7 @@ else
 fi
 
 # =================================================================
-# 4 CONFIGURACIÓN DE USUARIO Y GRUPOS (SW-05)
+# 8. CONFIGURACIÓN DE USUARIO Y GRUPOS
 # =================================================================
 echo -e "${YELLOW}>> Configurando permisos de usuario...${NC}"
 
@@ -215,7 +208,7 @@ else
 fi
 
 # =================================================================
-# 5 PERMISOS PARA CONTROL DE BRILLO
+# 9. PERMISOS PARA CONTROL DE BRILLO
 # =================================================================
 if [ "$IN_VM" = false ] && command -v light > /dev/null; then
     echo -e "   [i] Configurando SUID para 'light'..."
@@ -229,7 +222,7 @@ elif [ "$IN_VM" = true ]; then
 fi
 
 # =================================================================
-# 6 ACTIVACIÓN DE SERVICIOS
+# 10. ACTIVACIÓN DE SERVICIOS
 # =================================================================
 echo -e "${YELLOW}>> Verificando gestor de servicios...${NC}"
 
