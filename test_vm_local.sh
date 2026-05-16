@@ -99,11 +99,12 @@ test_step_source() {
     local desc="$2"
     local tmp_out
     tmp_out=$(mktemp)
-    trap "rm -f '$tmp_out'" RETURN
+    trap 'rm -f "$tmp_out"' RETURN
 
     echo -e "${YELLOW}[TEST] $desc${NC}"
     echo "--- $desc ---" >> "$LOG_FILE"
 
+    # shellcheck source=/dev/null
     source "$script" > "$tmp_out" 2>&1
     local exit_code=$?
 
@@ -144,9 +145,11 @@ test_step() {
 # EJECUTAR SCRIPTS EN ORDEN
 # =================================================================
 echo -e "${BLUE}>> Ejecutando pruebas simuladas...${NC}"
-echo "================================================" >> "$LOG_FILE"
-echo "eaSway VM Local Test - $(date)" >> "$LOG_FILE"
-echo "================================================" >> "$LOG_FILE"
+{
+    echo "================================================"
+    echo "eaSway VM Local Test - $(date)"
+    echo "================================================"
+} >> "$LOG_FILE"
 
 # BUG#1 FIX: check_hardware usa source para exportar variables al entorno actual
 test_step_source "${SCRIPT_DIR}/scripts/check_hardware.sh" "Detección de Hardware"
