@@ -1,12 +1,15 @@
 #!/bin/bash
 # =================================================================
-# Versión: 0.5
+# Versión: 0.0.4
 # eaSway - Módulo de Post-instalación y Permisos
 # Finalidad: Configurar el sistema de forma dinámica y genérica.
-# Fix v0.5:
+# Fix v0.0.4:
 #   - Eliminado read -n 1 bloqueante (rompe ejecución no interactiva).
 #   - Ruta de wallpaper actualizada a .webp
 #   - REPO_ROOT corregido para scripts/ dentro de la raíz del repo.
+# Fix v0.0.4:
+#   - BUG-7: Agregado fallback .svg para easway_wallpaper_geometric.svg,
+#     el único asset real del repo. Evita que swaybg arranque con path nulo.
 # =================================================================
 
 GREEN='\033[0;32m'
@@ -83,8 +86,8 @@ if [ -f "$REPO_ROOT/assets/wallpapers/easway_wallpaper.webp" ]; then
 elif [ -f "$REPO_ROOT/assets/wallpapers/easway_wallpaper.png" ]; then
     WALLPAPER_SRC="$REPO_ROOT/assets/wallpapers/easway_wallpaper.png"
 elif [ -f "$REPO_ROOT/assets/wallpapers/easway_wallpaper_geometric.svg" ]; then
-    # BUG-7 FIX: el único asset real en el repo es .svg; se agrega como último
-    # fallback para que swaybg no arranque con un path inexistente.
+    # BUG-7 FIX: el único asset presente en el repo es .svg; sin este fallback
+    # swaybg arrancaría con un path inexistente y el fondo quedaría negro.
     WALLPAPER_SRC="$REPO_ROOT/assets/wallpapers/easway_wallpaper_geometric.svg"
 fi
 

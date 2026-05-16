@@ -47,9 +47,8 @@ if command -v systemd-detect-virt &>/dev/null; then
     fi
 fi
 
-# Si se detectó virtualización, verificar dependencias mínimas y salir
-# BUG-5 FIX: la sección de dependencias estaba DESPUÉS del exit 0, por lo que
-# nunca se ejecutaba en entornos VM. Se mueve aquí para que siempre se valide.
+# Si se detectó virtualización, verificar dependencias mínimas y salir.
+# BUG-5 FIX: REQUIRED_CMDS estaba DESPUÉS del exit 0, nunca se ejecutaba en VM.
 if [ "$SKIP_HARDWARE_DETECTION" = true ]; then
     echo -e "${YELLOW}>> Verificando dependencias mínimas (entorno VM)...${NC}"
     REQUIRED_CMDS=("bash" "apt" "sudo" "cp" "mkdir" "find")
@@ -58,7 +57,6 @@ if [ "$SKIP_HARDWARE_DETECTION" = true ]; then
             echo -e "${RED}   [ERROR] Dependencia crítica no encontrada: '$cmd'${NC}"
         fi
     done
-
     echo -e "   ----------------------------------------"
     echo -e "   - Tipo de dispositivo: $DEVICE_TYPE"
     echo -e "   - Fabricante de GPU: $GPU_VENDOR"
@@ -152,7 +150,7 @@ else
 fi
 
 # =================================================================
-# 5. DEPENDENCIAS MÍNIMAS — ejecutadas en ruta no-VM
+# 5. DEPENDENCIAS MÍNIMAS — solo ruta no-VM
 # (en ruta VM ya se verificaron antes del exit 0 temprano)
 # =================================================================
 REQUIRED_CMDS=("bash" "apt" "sudo" "cp" "mkdir" "find")

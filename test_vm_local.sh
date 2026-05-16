@@ -89,9 +89,9 @@ echo -e "${GREEN}   [OK] Environment preparado.${NC}\n"
 # =================================================================
 
 # BUG-1 FIX: source dentro de un pipe fuerza subshell — las variables exportadas
-# (GPU_VENDOR, DEVICE_TYPE, IN_VM) se pierden y PIPESTATUS[0] siempre es 0.
-# Solución: source en el proceso actual con salida a fichero temporal; luego
-# volcamos ese fichero a pantalla Y al log sin subshell de por medio.
+# (GPU_VENDOR, DEVICE_TYPE, IN_VM) se perdían y PIPESTATUS[0] siempre devolvía 0.
+# Solución: source en el proceso actual, salida capturada en fichero temporal;
+# se vuelca a pantalla y al log sin ningún subshell de por medio.
 test_step_source() {
     local script="$1"
     local desc="$2"
@@ -104,7 +104,6 @@ test_step_source() {
     source "$script" > "$tmp_out" 2>&1
     local exit_code=$?
 
-    # Mostrar en pantalla y añadir al log (ya sin subshell)
     cat "$tmp_out"
     cat "$tmp_out" >> "$LOG_FILE"
     rm -f "$tmp_out"

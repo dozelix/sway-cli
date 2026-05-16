@@ -183,7 +183,6 @@ else
     # =================================================================
     # 7. LIMPIEZA FINAL
     # BUG#4 FIX: apt autoremove movido dentro del bloque "command -v apt"
-    # Antes estaba fuera y fallaba en entornos sin apt real
     # =================================================================
     echo -e "${YELLOW}>> Limpiando caché de apt...${NC}"
     sudo apt autoremove -y && sudo apt autoclean
