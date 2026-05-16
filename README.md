@@ -9,11 +9,9 @@ nuestro tipo de usuario es el que tiene conocimientos basicos de terminal en bas
 
 ### Estado del Proyecto
 
-**v0.0.4-alpha**  
+**v0.0.5-alpha**  
 **en desarrollo**
 
-- Actualmente hemos finalizado la **Fase de Infraestructura**. El instalador ya es capaz de detectar la versión de tu OS y ajustar las dependencias de **Wayland** automáticamente.
-- hemos agregado un fix para que puedas testear el repo en VMs
 
 ---
 
